@@ -164,7 +164,6 @@ function checkSchedule() {
             let subreddits = channels[id]["subreddits"];
             for (let sub in subreddits) {
                 let times = subreddits[sub]["post_times"];
-                console.log(times);
                 if (times.indexOf(formatted) > -1) {
                     runSchedule(id, sub);
                 }

@@ -52,9 +52,7 @@ var REDDIT_COMMANDS = {
                 return false;
             }
             times = times.split(',');
-            this.setSchedule(channel_id, subreddit, times, sort).then(data => {
-                received.channel.send(`Reddit Scheduled to post on this channel: /r/${subreddit} every day at ${data.times} sorting via ${sort}. Type \`!redsched [SUBREDDIT] STOP\` to delete this schedule.`);
-            })
+            this.setSchedule(channel_id, subreddit, times, sort);
         } else {
             received.channel.send("Error understanding !redsched format. Type `!help redsched` for how to use.");
         }
@@ -70,9 +68,10 @@ var REDDIT_COMMANDS = {
                     }
                 }
             }, false);
-            return {
-                "times": times.join(' & ')
-            }
+            let channel = client.channels.get(channel_id);
+            channel.send(`Reddit Scheduled to post on this channel: /r/${subreddit} every day at ${times} sorting via ${sort}. Type \`!redsched [SUBREDDIT] STOP\` to delete this schedule.`);
+        } else {
+            return false;
         }
     },
     deleteSchedule(channel_id, subreddit) {
@@ -99,7 +98,7 @@ var REDDIT_COMMANDS = {
     }
 }
 
-function getSubredditPost(subreddit, sort) {
+async function getSubredditPost(subreddit, sort) {
     const sub_config = {
         limit: 5,
         time: 'day'
@@ -141,7 +140,7 @@ function getSubredditPost(subreddit, sort) {
     }
 }
 
-function checkValidSubreddit(subreddit) {
+async function checkValidSubreddit(subreddit) {
     r.getSubreddit(subreddit).getNew({
             limit: 1
         })
@@ -155,7 +154,7 @@ function checkValidSubreddit(subreddit) {
         });
 }
 
-function checkValidTimes(times){
+function checkValidTimes(times) {
     if (times.length) {
         let arr = times.split(',');
         var regex = /[0-9][0-9]:[0-9][0-9]/g;

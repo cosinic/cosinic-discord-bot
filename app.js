@@ -46,7 +46,7 @@ function processCommand(receivedMessage) {
             stock_commands.getStock(arguments, receivedMessage);
             break;
         case 'redsched':
-            reddit_commands.setSchedule(arguments, receivedMessage);
+            reddit_commands.handleSchedule(arguments, receivedMessage);
             break;
         default:
             break;

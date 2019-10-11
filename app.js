@@ -56,7 +56,7 @@ function helpCommand(args, received) {
                 received.channel.send("You can use this command like: `!lolstats [SUMMONER_USERNAME]`");
                 break;
             case 'stock':
-                received.channel.send("You can use this command like: `!stock [TICKER] [MONTHS(optional)]`");
+                received.channel.send("You can use this command like: `!stock [TICKER] [info|NUM_MONTHS]`");
                 break;
             default:
                 break;
@@ -86,10 +86,12 @@ function statsCommand(args, received) {
 }
 
 const IEX_URL = `https://cloud.iexapis.com/stable/`;
+
 function getStock(args, received) {
-    if(args.length){
+    if (args.length) {
+        const TICKER = args[0];
         if (args.length === 1) {
-            const quoteURL = IEX_URL + `stock/${args[0]}/quote?token=${IEX_API}`;
+            const quoteURL = IEX_URL + `stock/${TICKER}/quote?token=${IEX_API}`;
             axios.get(quoteURL)
                 .then((res) => {
                     let stock = res.data;
@@ -98,19 +100,39 @@ function getStock(args, received) {
 
                     let change_percent = stock.changePercent * 100;
 
-                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice}** (${change_percent > 0 ? "+" : ""}${change_percent.toFixed(2)}%) \n`;
-                    if(stock.open)
-                        stockInfo += `It opened at $${stock.open}. \n`;
+                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice.toLocaleString('en')}** (${change_percent > 0 ? "+" : ""}${change_percent.toFixed(2)}%) \n`;
+                    if (stock.open)
+                        stockInfo += `It opened at $${stock.open.toLocaleString('en')}. \n`;
                     if (stock.close)
-                        stockInfo += `It closed at at $${stock.close}. \n`;
-                    if(stock.low && stock.high)
-                        stockInfo += `Today's low: $${stock.low}. Today's high: $${stock.high}. \n`;
+                        stockInfo += `It closed at at $${stock.close.toLocaleString('en')}. \n`;
+                    if (stock.low && stock.high)
+                        stockInfo += `Today's low: $${stock.low.toLocaleString('en')}. Today's high: $${stock.high.toLocaleString('en')}. \n`;
                     stockInfo += `*US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
 
                     received.channel.send(stockInfo);
                 }).catch(error => {
                     console.log(error);
                 });
+        } else {
+            let optional_args = args[1];
+            if (typeof optional_args === "string") {
+                if (optional_args === "info") {
+                    const companyURL = IEX_URL + `stock/${TICKER}/company?token=${IEX_API}`;
+                    axios.get(companyURL)
+                        .then((res) => {
+                            let stock = res.data;
+                            let stockInfo = `${stock.companyName} **(${stock.symbol})** is listed on the ${stock.exchange}. \n`;
+                            stockInfo += `Current CEO is ${stock.CEO} and has ${stock.employees.toLocaleString('en')} employees. \n`;
+                            stockInfo += `They are in the ${stock.industry} industry within the ${stock.sector} sector. \n`;
+                            stockInfo += `Description: > ${stock.description} \n`;
+                            stockInfo += `*<${stock.website}>*`;
+
+                            received.channel.send(stockInfo);
+                        }).catch(error => {
+                            console.log(error);
+                        });
+                }
+            }
         }
     }
 }

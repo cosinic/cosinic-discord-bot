@@ -99,7 +99,13 @@ function getStock(args, received) {
 
                     let change_percent = stock.changePercent * 100;
 
-                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice}** (${change_percent > 0 ? "Up" : "Down"} ${change_percent}%) \nIt opened at $${stock.open}. \n*US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
+                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice}** (${change_percent > 0 ? "Up" : "Down"} ${change_percent.toFixed(2)}%) \n`
+                    stockInfo += `It opened at $${stock.open}. \n`;
+                    if (stock.close) {
+                        stockInfo += `It closed at at $${stock.close}. \n`;
+                    }
+                    stockInfo += `Today's low: $${stock.low}. Today's high: $${stock.high}. \n`;
+                    stockInfo += `*US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
                     received.channel.send(stockInfo);
                 }).catch(error => {
                     console.log(error);

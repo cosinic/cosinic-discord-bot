@@ -2,7 +2,6 @@ require('dotenv').config();
 var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
 var cron = require('node-cron');
-var client = require('./../app.js');
 const snoowrap = require('snoowrap');
 
 const r = new snoowrap({
@@ -38,12 +37,12 @@ var REDDIT_COMMANDS = {
             let subreddit = args[0];
             let times = args[1];
             let sort = "hot";
-            if (args[2].length) {
+            if (args[2]) {
                 sort = args[2];
             }
-            if (times === "STOP") {
+            if (times === "STOP" || times === "stop") {
                 if (this.deleteSchedule(channel_id, subreddit)) {
-                    received.channel.send(`Reddit schedule deleted for /r/${subreddit}. Bot will stop posting daily from this subreddit.`);
+                    received.channel.send(`Schedule deleted for /r/${subreddit}. Bot will stop posting daily from this subreddit.`);
                 }
                 return false;
             }
@@ -54,7 +53,7 @@ var REDDIT_COMMANDS = {
             times = times.split(',');
             setSchedule(channel_id, subreddit, times, sort).then(data => {
                 if (data)
-                    received.channel.send(`Reddit Scheduled to post on this channel: /r/${subreddit} every day at ${data.times} sorting via ${sort}. Type \`!redsched ${subreddit} STOP\` to delete this schedule.`);
+                    received.channel.send(`Scheduled to post on this channel: **/r/${subreddit}** every day at ${data.times} sorting via ${sort}. Type \`!redsched ${subreddit} STOP\` to delete this schedule.`);
             });
         } else {
             received.channel.send("Error understanding !redsched format. Type `!help redsched` for how to use.");
@@ -76,28 +75,24 @@ async function runSchedule(channel_id, subreddit) {
     let sub_schedule = redditDB.getData(`/channels/${channel_id}/subreddits/${subreddit}`);
     let sort = sub_schedule.sort;
     let post = await getSubredditPost(subreddit, sort);
-
     if (post) {
         let title = post.title;
         let author = post.author.name;
         let url = post.url;
-        channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\n${url}`);
+        channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\n${url}\nPermalink: <https://reddit.com${post.permalink}>`);
     }
 }
 
 async function setSchedule(channel_id, subreddit, times, sort) {
     let isValid = await checkValidSubreddit(subreddit);
     if (isValid) {
-        redditDB.push('/channels/' + channel_id, {
-            "subreddits": {
-                subreddit: {
-                    "post_times": times,
-                    "sort": sort
-                }
-            }
+        redditDB.push('/channels/' + channel_id + '/subreddits/' + subreddit, {
+            "post_times": times,
+            "sort": sort
         }, false);
+        let newData = redditDB.getData(`/channels/${channel_id}/subreddits/${subreddit}`);
         return {
-            "times": times.join(' & ')
+            "times": newData.post_times.join(' & ')
         }
     } else {
         return false;
@@ -110,64 +105,50 @@ async function getSubredditPost(subreddit, sort) {
         time: 'day'
     };
     let sub = r.getSubreddit(subreddit);
+    var submission;
     if (sort === "top") {
-        sub.getTop(sub_config)
-            .then(data => {
-                let submission = data[0];
-                if (submission) {
-                    return submission;
-                }
-                return false;
-            }).catch(err => {
+        submission = await sub.getTop(sub_config)
+            .catch(err => {
+                console.log(err);
                 return false;
             });
     } else if (sort === "rising") {
-        sub.getTop(sub_config)
-            .then(data => {
-                let submission = data[0];
-                if (submission) {
-                    return submission;
-                }
-                return false;
-            }).catch(err => {
+        submission = await sub.getTop(sub_config)
+            .catch(err => {
+                console.log(err);
                 return false;
             });
     } else { //default sort by hot
-        sub.getHot(sub_config)
-            .then(data => {
-                let submission = data[0];
-                if (submission) {
-                    return submission;
-                }
-                return false;
-            }).catch(err => {
+        submission = await sub.getHot(sub_config)
+            .catch(err => {
+                console.log(err);
                 return false;
             });
     }
+    return submission[0];
 }
 
 async function checkValidSubreddit(subreddit) {
-    r.getSubreddit(subreddit).getNew({
-            limit: 1
-        })
-        .then(data => {
-            if (data[0]) {
-                return true;
-            }
-            return false;
-        }).catch(err => {
-            return false;
-        });
+    let response = await r.getSubreddit(subreddit).getNew({
+        limit: 1
+    }).catch(err => {
+        return false;
+    });
+    if (response[0]) {
+        return true;
+    }
+    return false;
 }
 
 function checkValidTimes(times) {
     if (times.length) {
         let arr = times.split(',');
         var regex = /[0-9][0-9]:[0-9][0-9]/g;
-        arr.map((time) => {
-            return time.match(regex) != null;
-        });
-        return arr.every((x) => x);
+        return arr.map((time) => {
+            let hours = time.split(':')[0];
+            let minutes = time.split(':')[1];
+            return time.match(regex) != null && hours < 24 && minutes < 60;
+        }).every((x) => x === true);
     }
     return false;
 }
@@ -180,9 +161,11 @@ function checkSchedule() {
     try {
         let channels = redditDB.getData('/channels');
         for (let id in channels) {
-            let subreddits = channels[id][subreddits];
+            let subreddits = channels[id]["subreddits"];
             for (let sub in subreddits) {
-                if (formatted.indexOf(subreddits[sub].post_times) > -1) {
+                let times = subreddits[sub]["post_times"];
+                console.log(times);
+                if (times.indexOf(formatted) > -1) {
                     runSchedule(id, sub);
                 }
             }

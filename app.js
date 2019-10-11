@@ -1,11 +1,6 @@
 require('dotenv').config();
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const help_commands = require('./commands/help.js');
-const riot_commands = require('./commands/riot.js');
-const stock_commands = require('./commands/stock.js');
-const reddit_commands = require('./commands/reddit.js');
-
 const DISCORD_API = process.env.BOT_SECRET;
 
 client.on('ready', () => {
@@ -24,7 +19,16 @@ client.on('message', (receivedMessage) => {
     if (receivedMessage.content.startsWith("!")) {
         processCommand(receivedMessage);
     }
-})
+});
+
+client.login(DISCORD_API); // Log into discord server
+
+global.client = client;
+
+const help_commands = require('./commands/help.js');
+const riot_commands = require('./commands/riot.js');
+const stock_commands = require('./commands/stock.js');
+const reddit_commands = require('./commands/reddit.js');
 
 function processCommand(receivedMessage) {
     let fullCommand = receivedMessage.content.substr(1) // Remove the leading exclamation mark
@@ -52,6 +56,3 @@ function processCommand(receivedMessage) {
             break;
     }
 }
-
-client.login(DISCORD_API); // Log into discord server
-module.exports = client;

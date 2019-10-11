@@ -124,7 +124,7 @@ function getStock(args, received) {
                             let stockInfo = `${stock.companyName} **(${stock.symbol})** is listed on the ${stock.exchange}. \n`;
                             stockInfo += `Current CEO is ${stock.CEO} and has ${stock.employees.toLocaleString('en')} employees. \n`;
                             stockInfo += `They are in the ${stock.industry} industry within the ${stock.sector} sector. \n`;
-                            stockInfo += `Description: > ${stock.description} \n`;
+                            stockInfo += `> ${stock.description} \n`;
                             stockInfo += `*<${stock.website}>*`;
 
                             received.channel.send(stockInfo);

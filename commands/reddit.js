@@ -33,7 +33,7 @@ var REDDIT_COMMANDS = {
             received.channel.send(`You can only set this on a text channel`);
             return false;
         }
-        if (args.length > 2) {
+        if (args.length > 1) {
             let channel_id = received.channel.id;
             let subreddit = args[0];
             let times = args[1];
@@ -52,26 +52,12 @@ var REDDIT_COMMANDS = {
                 return false;
             }
             times = times.split(',');
-            this.setSchedule(channel_id, subreddit, times, sort);
+            setSchedule(channel_id, subreddit, times, sort).then(data => {
+                if (data)
+                    received.channel.send(`Reddit Scheduled to post on this channel: /r/${subreddit} every day at ${data.times} sorting via ${sort}. Type \`!redsched ${subreddit} STOP\` to delete this schedule.`);
+            });
         } else {
             received.channel.send("Error understanding !redsched format. Type `!help redsched` for how to use.");
-        }
-    },
-    async setSchedule(channel_id, subreddit, times, sort) {
-        let isValid = await checkValidSubreddit(subreddit);
-        if (isValid) {
-            redditDB.push('/channels/' + channel_id, {
-                "subreddits": {
-                    subreddit: {
-                        "post_times": times,
-                        "sort": sort
-                    }
-                }
-            }, false);
-            let channel = client.channels.get(channel_id);
-            channel.send(`Reddit Scheduled to post on this channel: /r/${subreddit} every day at ${times} sorting via ${sort}. Type \`!redsched [SUBREDDIT] STOP\` to delete this schedule.`);
-        } else {
-            return false;
         }
     },
     deleteSchedule(channel_id, subreddit) {
@@ -82,19 +68,39 @@ var REDDIT_COMMANDS = {
             console.error(error);
             return false;
         }
-    },
-    async runSchedule(channel_id, subreddit) {
-        let channel = client.channels.get(channel_id);
-        let sub_schedule = redditDB.getData(`/channels/${channel_id}/subreddits/${subreddit}`);
-        let sort = sub_schedule.sort;
-        let post = await getSubredditPost(subreddit, sort);
+    }
+}
 
-        if (post) {
-            let title = post.title;
-            let author = post.author.name;
-            let url = post.url;
-            channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\n${url}`);
+async function runSchedule(channel_id, subreddit) {
+    let channel = client.channels.get(channel_id);
+    let sub_schedule = redditDB.getData(`/channels/${channel_id}/subreddits/${subreddit}`);
+    let sort = sub_schedule.sort;
+    let post = await getSubredditPost(subreddit, sort);
+
+    if (post) {
+        let title = post.title;
+        let author = post.author.name;
+        let url = post.url;
+        channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\n${url}`);
+    }
+}
+
+async function setSchedule(channel_id, subreddit, times, sort) {
+    let isValid = await checkValidSubreddit(subreddit);
+    if (isValid) {
+        redditDB.push('/channels/' + channel_id, {
+            "subreddits": {
+                subreddit: {
+                    "post_times": times,
+                    "sort": sort
+                }
+            }
+        }, false);
+        return {
+            "times": times.join(' & ')
         }
+    } else {
+        return false;
     }
 }
 
@@ -177,7 +183,7 @@ function checkSchedule() {
             let subreddits = channels[id][subreddits];
             for (let sub in subreddits) {
                 if (formatted.indexOf(subreddits[sub].post_times) > -1) {
-                    REDDIT_COMMANDS.runSchedule(id, sub);
+                    runSchedule(id, sub);
                 }
             }
         }

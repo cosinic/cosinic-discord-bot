@@ -9,7 +9,7 @@ var HELP_COMMANDS = {
                     received.channel.send("You can use this command like: `!stock [TICKER] [info|NUM_MONTHS]`");
                     break;
                 case 'redsched':
-                    received.channel.send("You can use this command like: `!redsched [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]`. \nFor example: `!redscehd funny 17:00 top` will post the top reddit post from /r/funny at 5:00PM EST daily.");
+                    received.channel.send("You can use this command like: `!redsched [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]`. \nFor example: `!redsched funny 17:00 top` will post the top reddit post from /r/funny at 5:00PM EST daily.");
                     break;
                 default:
                     break;

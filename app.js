@@ -4,6 +4,7 @@ const client = new Discord.Client();
 const help_commands = require('./commands/help.js');
 const riot_commands = require('./commands/riot.js');
 const stock_commands = require('./commands/stock.js');
+const reddit_commands = require('./commands/reddit.js');
 
 const DISCORD_API = process.env.BOT_SECRET;
 
@@ -44,9 +45,13 @@ function processCommand(receivedMessage) {
         case 'stock':
             stock_commands.getStock(arguments, receivedMessage);
             break;
+        case 'redsched':
+            reddit_commands.setSchedule(arguments, receivedMessage);
+            break;
         default:
             break;
     }
 }
 
 client.login(DISCORD_API); // Log into discord server
+module.exports = client;

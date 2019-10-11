@@ -86,7 +86,7 @@ function statsCommand(args, received) {
     }
 }
 
-const IEX_URL = `https://sandbox.iexapis.com/stable/`;
+const IEX_URL = `https://cloud.iexapis.com/stable/`;
 function getStock(args, received) {
     if(args.length){
         if (args.length === 1) {
@@ -97,10 +97,7 @@ function getStock(args, received) {
                     let update_time = new Date(stock.latestUpdate);
                     update_time = update_time.toLocaleDateString() + ' ' + update_time.toLocaleTimeString();
 
-                    let stockInfo = `${stock.companyName} [${stock.symbol}] is trading at $${stock.latestPrice} (${stock.changePercent}%) \n
-                    It opened at $${stock.open}. \n
-                    US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.
-                    `;
+                    let stockInfo = `${stock.companyName} [${stock.symbol}] is trading at $${stock.latestPrice} (${stock.latestPrice > 0 ? "Up" : "Down"} ${stock.changePercent}%) \n It opened at $${stock.open}. \n US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.`;
                     received.channel.send(stockInfo);
                 }).catch(error => {
                     console.log(error);

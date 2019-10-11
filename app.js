@@ -51,7 +51,6 @@ function processCommand(receivedMessage) {
 
 function helpCommand(args, received) {
     if (args.length > 0) {
-        received.channel.send("It looks like you might need help with " + args)
         switch (args.join(' ')) {
             case 'lolstats':
                 received.channel.send("You can use this command like: `!lolstats [SUMMONER_USERNAME]`");
@@ -99,13 +98,15 @@ function getStock(args, received) {
 
                     let change_percent = stock.changePercent * 100;
 
-                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice}** (${change_percent > 0 ? "Up" : "Down"} ${change_percent.toFixed(2)}%) \n`
-                    stockInfo += `It opened at $${stock.open}. \n`;
-                    if (stock.close) {
+                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice}** (${change_percent > 0 ? "+" : ""}${change_percent.toFixed(2)}%) \n`;
+                    if(stock.open)
+                        stockInfo += `It opened at $${stock.open}. \n`;
+                    if (stock.close)
                         stockInfo += `It closed at at $${stock.close}. \n`;
-                    }
-                    stockInfo += `Today's low: $${stock.low}. Today's high: $${stock.high}. \n`;
+                    if(stock.low && stock.high)
+                        stockInfo += `Today's low: $${stock.low}. Today's high: $${stock.high}. \n`;
                     stockInfo += `*US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
+
                     received.channel.send(stockInfo);
                 }).catch(error => {
                     console.log(error);

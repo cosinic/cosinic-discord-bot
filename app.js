@@ -97,7 +97,9 @@ function getStock(args, received) {
                     let update_time = new Date(stock.latestUpdate);
                     update_time = update_time.toLocaleDateString() + ' ' + update_time.toLocaleTimeString();
 
-                    let stockInfo = `${stock.companyName} [${stock.symbol}] is trading at $${stock.latestPrice} (${stock.latestPrice > 0 ? "Up" : "Down"} ${stock.changePercent}%) \n It opened at $${stock.open}. \n US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.`;
+                    let change_percent = stock.changePercent * 100;
+
+                    let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice}** (${change_percent > 0 ? "Up" : "Down"} ${change_percent}%) \nIt opened at $${stock.open}. \n*US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
                     received.channel.send(stockInfo);
                 }).catch(error => {
                     console.log(error);

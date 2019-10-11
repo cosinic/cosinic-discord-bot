@@ -1,13 +1,8 @@
 require('dotenv').config();
-import {
-    JsonDB
-} from 'node-json-db';
-import {
-    Config
-} from 'node-json-db/dist/lib/JsonDBConfig';
+import {JsonDB} from 'node-json-db';
+import {Config} from 'node-json-db/dist/lib/JsonDBConfig';
 var cron = require('node-cron');
 var client = require(__dirname + 'app.js');
-
 const snoowrap = require('snoowrap');
 
 const r = new snoowrap({

@@ -7,7 +7,7 @@ var RIOT_COMMANDS = {
     sucks(args, received) {
         received.channel.send("LEAGUE ISN'T BAD. YOU'RE BAD. SUCKS TO SUCK. -Everyone in cosinic.");
     },
-    stat(args, received) {
+    stats(args, received) {
         if (args.length > 0) {
             axios.get(`${SUMMONER_URL}${args.join(' ')}?api_key=${RIOT_API}`)
                 .then((res) => {

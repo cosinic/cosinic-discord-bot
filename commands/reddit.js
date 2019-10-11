@@ -1,6 +1,6 @@
 require('dotenv').config();
-import {JsonDB} from 'node-json-db';
-import {Config} from 'node-json-db/dist/lib/JsonDBConfig';
+var JsonDB = require('node-json-db');
+var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig');
 var cron = require('node-cron');
 var client = require(__dirname + 'app.js');
 const snoowrap = require('snoowrap');
@@ -24,7 +24,7 @@ channels: {
   }
 }
 */
-var redditDB = new JsonDB(new Config("reddit", true, false, '/'));
+var redditDB = new JsonDB(new JsonDBConfig("reddit", true, false, '/'));
 
 //!redsched [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]
 var REDDIT_COMMANDS = {

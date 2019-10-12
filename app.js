@@ -46,6 +46,9 @@ function processCommand(receivedMessage) {
         case 'lolsucks':
             riot_commands.sucks(arguments, receivedMessage);
             break;
+        case 'lolbaksa':
+            riot_commands.baksa(arguments, receivedMessage);
+            break;
         case 'stock':
             stock_commands.getStock(arguments, receivedMessage);
             break;

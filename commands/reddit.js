@@ -46,6 +46,10 @@ var REDDIT_COMMANDS = {
                 }
                 return false;
             }
+            if (times === "NOW" || times === "now") {
+                sendPostToChannel(received.channel, subreddit, sort);
+                return false;
+            }
             if (!checkValidTimes(times)) {
                 received.channel.send(`Error in time format. Please use 24 hour time. EG: 17:00 (for 5:00 PM) or 09:00 (for 9:00 AM)`);
                 return false;
@@ -70,17 +74,28 @@ var REDDIT_COMMANDS = {
     }
 }
 
-async function runSchedule(channel_id, subreddit) {
-    let channel = client.channels.get(channel_id);
-    let sub_schedule = redditDB.getData(`/channels/${channel_id}/subreddits/${subreddit}`);
-    let sort = sub_schedule.sort;
-    let post = await getSubredditPost(subreddit, sort);
+async function sendPostToChannel(channel, subreddit, sort) {
+    let post = await fetchPicturePost(subreddit, sort);
     if (post) {
         let title = post.title;
         let author = post.author.name;
         let url = post.url;
-        channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\n${url}\nPermalink: <https://reddit.com${post.permalink}>`);
+
+        if ((url.match(/\.(jpeg|jpg|gif|png)$/) != null)) { //If it's an image, then download it and send the direct image
+            channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\nPermalink: <https://reddit.com${post.permalink}>`, {
+                files: [url]
+            });
+        } else { // Otherwise, embed it into chat and let discord handle previews
+            channel.send(`Post from /r/${subreddit}. **${title}** by ${author}\n${url}\nPermalink: <https://reddit.com${post.permalink}>`);
+        }
     }
+}
+
+async function runSchedule(channel_id, subreddit) {
+    let channel = client.channels.get(channel_id);
+    let sub_schedule = redditDB.getData(`/channels/${channel_id}/subreddits/${subreddit}`);
+    let sort = sub_schedule.sort;
+    return await sendPostToChannel(channel, subreddit, sort);
 }
 
 async function setSchedule(channel_id, subreddit, times, sort) {
@@ -99,11 +114,14 @@ async function setSchedule(channel_id, subreddit, times, sort) {
     }
 }
 
-async function getSubredditPost(subreddit, sort) {
+async function getSubredditPost(subreddit, sort, link_id) {
     const sub_config = {
-        limit: 5,
+        limit: 1,
         time: 'day'
     };
+    if (link_id) {
+        sub_config['after'] = link_id; // Reddit API "after" checks posts after specified id
+    }
     let sub = r.getSubreddit(subreddit);
     var submission;
     if (sort === "top") {
@@ -126,6 +144,27 @@ async function getSubredditPost(subreddit, sort) {
             });
     }
     return submission[0];
+}
+
+async function fetchPicturePost(subreddit, sort) {
+    let post = await getSubredditPost(subreddit, sort);
+    /**
+     * post.distinguished = "moderator" - checks
+     for mod posts
+     * post.self_text  - checks
+     for text posts and not image posts
+     * post.url - checks that it has a link
+     */
+    function isValidPost(post) {
+        return post && post.url && !post.distinguished && !post.self_text;
+    }
+
+    // Until a valid link/pic/gif has been found, keep searching while it iterates down using link_id
+    while (!isValidPost(post)) {
+        let link_id = post.name; // Name refers to ID of current post.
+        post = await (getSubredditPost(subreddit, sort, link_id))
+    }
+    return post;
 }
 
 async function checkValidSubreddit(subreddit) {

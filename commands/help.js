@@ -1,19 +1,23 @@
 var HELP_COMMANDS = {
     help(args, received) {
         if (args.length > 0) {
+            let help_text = '';
             switch (args.join(' ')) {
                 case 'lolstats':
-                    received.channel.send("You can use this command like: `!lolstats [SUMMONER_USERNAME]`");
+                    help_text = "You can use this command like: `!lolstats [SUMMONER_USERNAME]`";
                     break;
                 case 'stock':
-                    received.channel.send("You can use this command like: `!stock [TICKER] [info|NUM_MONTHS]`");
+                    help_text = "You can use this command like: `!stock [TICKER] [info|NUM_MONTHS]`";
                     break;
                 case 'redsched':
-                    received.channel.send("You can use this command like: `!redsched [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]`. \nFor example: `!redsched funny 17:00 top` will post the top reddit post from /r/funny at 5:00PM EST daily.");
+                    help_text = `You can use this command like: \`!redsched [SUBREDDIT] [stop|now|time in HH: MM format 24 hour standard(multiple times separated by commas)] [hot|top|rising]\`.
+                    \nE.G: \`!redsched funny 17:00 top\` will post the top reddit post from /r/funny at 5:00PM EST daily.
+                    \nE.G: \`!redsched funny now top\` will post the top reddit post instantly.`;
                     break;
                 default:
                     break;
             }
+            received.channel.send(help_text);
         } else {
             received.channel.send("I'm not sure what you need help with. Try `!help [topic]`")
         }

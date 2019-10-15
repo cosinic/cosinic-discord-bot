@@ -29,6 +29,7 @@ const help_commands = require('./commands/help.js');
 const riot_commands = require('./commands/riot.js');
 const stock_commands = require('./commands/stock.js');
 const reddit_commands = require('./commands/reddit.js');
+const weather_commands = require('./commands/weather.js');
 
 function processCommand(receivedMessage) {
     let fullCommand = receivedMessage.content.substr(1) // Remove the leading exclamation mark
@@ -51,6 +52,9 @@ function processCommand(receivedMessage) {
             break;
         case 'redsched':
             reddit_commands.handleSchedule(arguments, receivedMessage);
+            break;
+        case 'weather':
+            weather_commands.today(arguments, receivedMessage);
             break;
         default:
             break;

@@ -14,6 +14,9 @@ var HELP_COMMANDS = {
                     \nE.G: \`!redsched funny 17:00 top\` will post the top reddit post from /r/funny at 5:00PM EST daily.
                     \nE.G: \`!redsched funny now top\` will post the top reddit post instantly.`;
                     break;
+                case 'weather':
+                    help_text = "You can use this command like: `!weather [CITY_NAME]`"
+                    break;
                 default:
                     break;
             }

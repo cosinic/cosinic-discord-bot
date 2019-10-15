@@ -50,6 +50,9 @@ function processCommand(receivedMessage) {
         case 'stock':
             stock_commands.getStock(arguments, receivedMessage);
             break;
+        case 'stonk':
+            stock_commands.getStonk(arguments, receivedMessage);
+            break;
         case 'redsched':
             reddit_commands.handleSchedule(arguments, receivedMessage);
             break;

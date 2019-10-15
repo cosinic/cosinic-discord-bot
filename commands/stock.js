@@ -53,8 +53,31 @@ var STOCK_COMMANDS = {
                 }
             }
         }
-    }
+    },
 
+    getStonk(args, received) {
+        let image_stonk = 'https://cosinic.com/stonk.png',
+            image_not_stonk = 'https://cosinic.com/notstonk.png';
+        const TICKER = args[0];
+        const quoteURL = IEX_URL + `stock/${TICKER}/quote?token=${IEX_API}`;
+        axios.get(quoteURL)
+            .then((res) => {
+                let stock = res.data;
+                let change_percent = stock.changePercent * 100;
+
+                if (change_percent >= 0) {
+                    received.channel.send('', {
+                        files: [image_stonk]
+                    });
+                } else {
+                    received.channel.send('', {
+                        files: [image_not_stonk]
+                    });
+                }
+            }).catch(error => {
+                console.log(error);
+            });
+    }
 }
 
 module.exports = STOCK_COMMANDS;

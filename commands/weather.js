@@ -6,7 +6,8 @@ const CURR_WEATHER_URL = 'api.openweathermap.org/data/2.5/weather';
 var WEATHER_COMMANDS = {
     today(args, received) {
         if (args.length > 0) {
-            axios.get(`${CURR_WEATHER_URL}?=${args[0]}&units=imperial&appid=${WEATHER_API}`)
+            let location = args.join(' ');
+            axios.get(`${CURR_WEATHER_URL}?=${location}&units=imperial&appid=${WEATHER_API}`)
                 .then((res) => {
                     let location =  res.data.name;
                     let description = res.data.weather[0].description;

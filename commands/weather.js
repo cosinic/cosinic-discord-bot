@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const WEATHER_API = process.env.WEATHER_API;
 
-const CURR_WEATHER_URL = 'api.openweathermap.org/data/2.5/weather';
+const CURR_WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather';
 var WEATHER_COMMANDS = {
     today(args, received) {
         if (args.length > 0) {
@@ -17,10 +17,18 @@ var WEATHER_COMMANDS = {
                     let max = res.data.main.temp_max;
                     let wind = res.data.wind.speed;
 
-                    let weatherInfo = `Current weather in ${location}: :${getWeatherEmoji(weather_id)}: ${description}\n Temperature: ${temp}°F (High ${max}°F/Min ${min}°F)\n Wind Speeds: ${wind} mph`
+                    // This just capitalizes the description
+                    description = description.toLowerCase()
+                        .split(' ')
+                        .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+                        .join(' ');
+
+                    let weatherInfo = `Current weather in ${location}: :${getWeatherEmoji(weather_id)}: ${description}\nTemperature: ${temp}°F (High ${max}°F/Min ${min}°F)\nWind Speeds: ${wind} mph`
                     received.channel.send(weatherInfo);
                 }).catch(error => {
-                    console.log(error);
+                    // console.log(error);
+                    let error_description = error.response.data.message;
+                    received.channel.send(`:cloud_tornado: Error ${error.response.status} ${error_description}`);
                 });
         }
     }
@@ -51,9 +59,9 @@ getWeatherEmoji = (id) => {
     if (emoji) {
         return emoji;
     }
-    let status_category = (id).toString()[0] + "00";
+    let status_category = (id).toString()[0] + "00"; // If not found then just use base X00 as emoji
     emoji = WEATHER_CONDITIONS[status_category];
-    return emoji || "sun_with_face";
+    return emoji || "sun_with_face"; // Or just return a sun if not found at all
 }
 
 module.exports = WEATHER_COMMANDS;

@@ -7,7 +7,7 @@ var WEATHER_COMMANDS = {
     today(args, received) {
         if (args.length > 0) {
             let location = args.join(' ');
-            axios.get(`${CURR_WEATHER_URL}?=${location}&units=imperial&appid=${WEATHER_API}`)
+            axios.get(`${CURR_WEATHER_URL}?q=${location}&units=imperial&appid=${WEATHER_API}`)
                 .then((res) => {
                     let location = res.data.name;
                     let weather_id = res.data.weather[0].id;

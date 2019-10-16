@@ -60,6 +60,39 @@ var WEATHER_COMMANDS = {
                     received.channel.send(weatherInfo);
                 });
         }
+    },
+    week(args, recieved) {
+        if(args.length > 0) {
+            let unit = UNITS;
+            if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
+                unit = args[0];
+                args = args.slice(1);
+            }
+            let location = args.join(' ');
+            fetchWeeklyWeather(location, unit)
+                .then((weather_data) => {
+                    if(!weather_data) {
+                        received.channel.send(`:cloud_tornado: Error - Location not found`);
+                        return;
+                    }
+                    let location = weather_data[0].city_name;
+                    let weatherInfo = `==================================================\n7 Day Forecast for ${location}:\n==================================================\n`;
+                    let i;
+                    for(i = 0; i < weather_data.length; i++) {
+                        let date = weather_data[i].valid_date;
+                        let weather_id = weather_data[i].weather.code;
+                        let description = weather_data[i].weather.description;
+                        let temp = weather_data[i].temp;
+                        let wind = weather_data[i].wind_spd;
+                        let wind_dir = weather_data[i].wind_cdir_full;
+                        let high = weather_data[i].high_temp || "N/A";
+                        let low = weather_data[i].low_temp || "N/A";
+                        dayInfo = '```'+`${data}:\n-----------------\n${getWeatherEmoji(weather_id)}: ${description}\n${temp}${getUnitDegrees(unit)} (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`+'```';
+                        weatherInfo += dayInfo;
+                    }
+                    received.channel.send(weatherInfo);
+                });
+        }
     }
 }
 
@@ -82,6 +115,26 @@ async function fetchCurrentWeather(location, unit) {
                 weather["low"] = forecast[0].low_temp;
             }
             return weather;
+        } else {
+            throw new Error("404 - Weather location not found");
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+/**
+ * 
+ * Get 7 day weather forecast
+ * 
+ */
+async function fetchWeeklyWeather(location, unit) {
+    if (!location) return;
+    unit = unit || UNITS;
+    try {
+        let forecast = await getForecastWeather(weather, unit);
+        if(forecast) {
+            return forecast;
         } else {
             throw new Error("404 - Weather location not found");
         }

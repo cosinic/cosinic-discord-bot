@@ -57,6 +57,9 @@ function processCommand(receivedMessage) {
         case 'weather':
             weather_commands.handleCommand(arguments, receivedMessage);
             break;
+        case 'weatherweek':
+            weather_commands.week(arguments, receivedMessage);
+            break;
         default:
             break;
     }

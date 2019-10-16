@@ -132,6 +132,11 @@ async function fetchWeeklyWeather(location, unit) {
     if (!location) return;
     unit = unit || UNITS;
     try {
+        let weather = {
+            city_name = location,
+            state_code = "",
+            county_code = "US"
+        }
         let forecast = await getForecastWeather(weather, unit);
         if(forecast) {
             return forecast;

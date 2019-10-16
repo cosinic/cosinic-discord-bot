@@ -31,7 +31,7 @@ const riot_commands = require('./commands/riot.js');
 const stock_commands = require('./commands/stock.js');
 const reddit_commands = require('./commands/reddit.js');
 const weather_commands = require('./commands/weather.js');
-const roll_commands = require('./commands/droll.js');
+const roll_commands = require('./commands/diceroll.js');
 
 function processCommand(receivedMessage) {
     let fullCommand = receivedMessage.content.substr(1) // Remove the leading exclamation mark
@@ -61,6 +61,7 @@ function processCommand(receivedMessage) {
         case 'd':
         case String(primaryCommand.match(/d\d{1,3}/)): //Matches d[0-9]{1-3 digits}
             roll_commands.handleCommand(primaryCommand, arguments, receivedMessage);
+            break;
         case 'weatherweek':
             weather_commands.week(arguments, receivedMessage);
             break;

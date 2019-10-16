@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const DICE_EMOJI = ':game_die:'; // Discord dice emoji
+const ERROR_EMOJI = ':interrobang:'; // Discord dice emoji
 
 var DICEROLL_COMMANDS = {
     handleCommand(primary, args, received) {
@@ -27,7 +28,7 @@ var DICEROLL_COMMANDS = {
             .then(num => {
                 this.displayRoll(num, received);
             }).catch(err => {
-                received.channel.send(`${DICE_EMOJI}:interrobang: ${err}`);
+                received.channel.send(`${DICE_EMOJI}${ERROR_EMOJI} ${err}`);
             });
     },
     displayRoll(number, received) {

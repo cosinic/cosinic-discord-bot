@@ -56,7 +56,7 @@ var WEATHER_COMMANDS = {
                     let high = weather_data.high || "N/A";
                     let low = weather_data.low || "N/A";
 
-                    let weatherInfo = `Current weather in ${location}: :${getWeatherEmoji(weather_id)}: ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
+                    let weatherInfo = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
                     received.channel.send(weatherInfo);
                 });
         }
@@ -87,7 +87,7 @@ var WEATHER_COMMANDS = {
                         let wind_dir = weather_data[i].wind_cdir_full;
                         let high = weather_data[i].high_temp || "N/A";
                         let low = weather_data[i].low_temp || "N/A";
-                        dayInfo = `\n__**${date}:**__\n-----------------\n${getWeatherEmoji(weather_id)}: ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
+                        dayInfo = `\n__**${date}:**__\n-----------------\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
                         weatherInfo += dayInfo;
                     }
                     received.channel.send(weatherInfo);
@@ -248,22 +248,24 @@ function getUnitSpeed(unit) {
 // https://www.weatherbit.io/api/codes
 // Discord Emoji codes
 const WEATHER_CONDITIONS = {
-    "200": "thunder_cloud_rain", //Thunderstorm
-    "210": "cloud_lightning",
-    "211": "cloud_lightning",
-    "212": "cloud_lightning",
-    "300": "cloud_rain", //Drizzle
-    "500": "white_sun_rain_cloud", //Rain
-    "600": "snowflake", //Snow
-    "601": "cloud_snow",
-    "602": "cloud_snow",
-    "700": "fog", //Mist
-    "800": "sunny", //Clear
-    "801": "white_sun_small_cloud", //Clouds
-    "802": "partly_sunny",
-    "803": "white_sun_cloud",
-    "804": "cloud",
-    "900": "cloud_rain"
+    "200": ":thunder_cloud_rain:", //Thunderstorm
+    "210": ":cloud_lightning:",
+    "211": ":cloud_lightning:",
+    "212": ":cloud_lightning:",
+    "300": ":white_sun_rain_cloud:", //Drizzle
+    "500": ":cloud_rain:", //Rain
+    "502": ":sweat_drops::cloud_rain::sweat_drops:", //Heavy Rain
+    "521": ":white_sun_rain_cloud:", //Shower Rain
+    "600": ":snowflake:", //Light Snow
+    "601": ":cloud_snow:", //Snow
+    "602": ":cloud_snow::snowman2:", //Heavy Snow
+    "700": ":fog:", //Mist
+    "800": ":sunny:", //Clear
+    "801": ":white_sun_small_cloud:", //Clouds
+    "802": ":partly_sunny:",
+    "803": ":white_sun_cloud:",
+    "804": ":cloud:",
+    "900": ":cloud_rain:"
 }
 
 getWeatherEmoji = (id) => {
@@ -273,7 +275,7 @@ getWeatherEmoji = (id) => {
     }
     let status_category = (id).toString()[0] + "00"; // If not found then just use base X00 as emoji
     emoji = WEATHER_CONDITIONS[status_category];
-    return emoji || "sun_with_face"; // Or just return a sun if not found at all
+    return emoji || ":sun_with_face:"; // Or just return a sun if not found at all
 }
 
 module.exports = WEATHER_COMMANDS;

@@ -61,7 +61,7 @@ var WEATHER_COMMANDS = {
                 });
         }
     },
-    week(args, recieved) {
+    week(args, received) {
         if(args.length > 0) {
             let unit = UNITS;
             if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
@@ -87,7 +87,7 @@ var WEATHER_COMMANDS = {
                         let wind_dir = weather_data[i].wind_cdir_full;
                         let high = weather_data[i].high_temp || "N/A";
                         let low = weather_data[i].low_temp || "N/A";
-                        dayInfo = `\n__**${data}:**__\n-----------------\n${getWeatherEmoji(weather_id)}: ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
+                        dayInfo = `\n__**${date}:**__\n-----------------\n${getWeatherEmoji(weather_id)}: ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
                         weatherInfo += dayInfo;
                     }
                     received.channel.send(weatherInfo);

@@ -10,5 +10,5 @@
 - [x] Ignore moderated posts or text posts *(10/12/2019)*
 
 #### Weather Checker
-- [ ] Add hourly weather display
+- [ ] Add forecast weather display
 - [ ] Add a scheduler that posts at a certain time of day

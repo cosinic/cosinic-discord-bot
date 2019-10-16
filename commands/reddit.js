@@ -23,7 +23,7 @@ channels: {
   }
 }
 */
-var redditDB = new JsonDB(new JsonDBConfig("reddit", true, false, '/'));
+var redditDB = new JsonDB(new JsonDBConfig("db/reddit", true, false, '/'));
 
 //!reddit [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]
 var REDDIT_COMMANDS = {

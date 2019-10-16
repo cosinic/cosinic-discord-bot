@@ -25,7 +25,7 @@ channels: {
 */
 var redditDB = new JsonDB(new JsonDBConfig("reddit", true, false, '/'));
 
-//!redsched [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]
+//!reddit [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]
 var REDDIT_COMMANDS = {
     handleSchedule(args, received) {
         if (received.channel.type !== "text") {
@@ -57,10 +57,10 @@ var REDDIT_COMMANDS = {
             times = times.split(',');
             setSchedule(channel_id, subreddit, times, sort).then(data => {
                 if (data)
-                    received.channel.send(`Scheduled to post on this channel: **/r/${subreddit}** every day at ${data.times} sorting via ${sort}. Type \`!redsched ${subreddit} STOP\` to delete this schedule.`);
+                    received.channel.send(`Scheduled to post on this channel: **/r/${subreddit}** every day at ${data.times} sorting via ${sort}. Type \`!reddit ${subreddit} STOP\` to delete this schedule.`);
             });
         } else {
-            received.channel.send("Error understanding !redsched format. Type `!help redsched` for how to use.");
+            received.channel.send("Error understanding !reddit format. Type `!help reddit` for how to use.");
         }
     },
     deleteSchedule(channel_id, subreddit) {
@@ -156,7 +156,7 @@ async function fetchPicturePost(subreddit, sort) {
      * post.url - checks that it has a link
      */
     function isValidPost(post) {
-        return post && post.url && !post.distinguished && !post.self_text;
+        return post && post.url && !post.distinguished && !post.self_text && !post.stickied && !post.pinned;
     }
 
     // Until a valid link/pic/gif has been found, keep searching while it iterates down using link_id

@@ -53,7 +53,7 @@ function processCommand(receivedMessage) {
         case 'stonk':
             stock_commands.getStonk(arguments, receivedMessage);
             break;
-        case 'redsched':
+        case 'reddit':
             reddit_commands.handleSchedule(arguments, receivedMessage);
             break;
         case 'weather':

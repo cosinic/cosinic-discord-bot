@@ -42,27 +42,28 @@ var WEATHER_COMMANDS = {
             let location = args.join(' ');
             fetchCurrentWeather(location, unit)
                 .then((weather_data) => {
-                    if (!weather_data) {
-                        received.channel.send(`:cloud_tornado: Error - Location not found`);
-                        return;
-                    }
                     let location = weather_data.city_name;
                     let weather_id = weather_data.weather.code;
                     let description = weather_data.weather.description;
                     let temp = weather_data.temp;
                     let feels_temp = weather_data.app_temp;
                     let wind = weather_data.wind_spd;
+                    if (unit === "M") {
+                        wind = wind * 3.6;
+                    }
                     let wind_dir = weather_data.wind_cdir_full;
                     let high = weather_data.high || "N/A";
                     let low = weather_data.low || "N/A";
 
-                    let weatherInfo = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
+                    let weatherInfo = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
                     received.channel.send(weatherInfo);
-                });
+                }).catch(err => {
+                    received.channel.send(`:cloud_tornado: Error ${err}`);
+                })
         }
     },
     week(args, received) {
-        if(args.length > 0) {
+        if (args.length > 0) {
             let unit = UNITS;
             if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
                 unit = args[0];
@@ -71,27 +72,59 @@ var WEATHER_COMMANDS = {
             let location = args.join(' ');
             fetchWeeklyWeather(location, unit)
                 .then((weather_data) => {
-                    if(!weather_data) {
-                        received.channel.send(`:cloud_tornado: Error - Location not found`);
-                        return;
+
+                    location = weather_data.location || location;
+                    let equalsSignLength = 50;
+                    let header = `${'='.repeat(equalsSignLength)}\n${' '.repeat((equalsSignLength * 2 - 19 - location.length)/2)}7 Day Forecast for ${location}\n${'='.repeat(equalsSignLength)}`;
+                    received.channel.send(header);
+
+                    const delay = ms => {
+                        return new Promise(resolve => setTimeout(resolve, ms))
                     }
-                    let location = weather_data[0].city_name;
-                    let weatherInfo = `==================================================\n7 Day Forecast for ${location}:\n==================================================\n`;
-                    let i;
-                    for(i = 0; i < weather_data.length; i++) {
-                        let date = weather_data[i].valid_date;
-                        let weather_id = weather_data[i].weather.code;
-                        let description = weather_data[i].weather.description;
-                        let temp = weather_data[i].temp;
-                        let wind = weather_data[i].wind_spd;
-                        let wind_dir = weather_data[i].wind_cdir_full;
-                        let high = weather_data[i].high_temp || "N/A";
-                        let low = weather_data[i].low_temp || "N/A";
-                        dayInfo = `\n__**${date}:**__\n-----------------\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
-                        weatherInfo += dayInfo;
+
+                    const delayMessage = cb => {
+                        return delay(1000).then(() => { // Delay every 1 second
+                            cb();
+                        });
                     }
-                    received.channel.send(weatherInfo);
-                });
+
+                    // Discord rate limit = 5 messages every 5 seconds.
+                    const displayLoop = async _ => {
+                        for (let i = 0; i < 7; i++) {
+                            let date = weather_data[i].valid_date;
+                            let weather_id = weather_data[i].weather.code;
+                            let description = weather_data[i].weather.description;
+                            let temp = weather_data[i].temp;
+                            let wind = weather_data[i].wind_spd;
+                            if (unit === "M") {
+                                wind = wind * 3.6;
+                            }
+                            let wind_dir = weather_data[i].wind_cdir_full;
+                            let high = weather_data[i].high_temp || "N/A";
+                            let low = weather_data[i].low_temp || "N/A";
+                            let pop = weather_data[i].pop;
+                            let precip = weather_data[i].precip;
+                            let snow = weather_data[i].snow;
+
+                            let dayInfo = `\n-----------------\n**${date}:**\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+                            if (precip > 0) {
+                                dayInfo += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
+                            }
+                            if (snow > 0) {
+                                dayInfo += `\nAccumulated snowfall: ${snow}${getUnitAmount(unit)}.`;
+                            }
+
+                            await delayMessage(() => {
+                                received.channel.send(dayInfo);
+                            });
+                        }
+                    }
+
+                    displayLoop();
+
+                }).catch(err => {
+                    received.channel.send(`:cloud_tornado: Error ${err}`);
+                })
         }
     }
 }
@@ -105,21 +138,17 @@ var WEATHER_COMMANDS = {
 async function fetchCurrentWeather(location, unit) {
     if (!location) return;
     unit = unit || UNITS;
-    try {
-        let today = await axios.get(`${CURR_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
-        if (today.data.count) {
-            let weather = today.data.data[0];
-            let forecast = await getForecastWeather(weather, unit);
-            if (forecast) {
-                weather["high"] = forecast[0].high_temp; //First data in forecast is current day
-                weather["low"] = forecast[0].low_temp;
-            }
-            return weather;
-        } else {
-            throw new Error("404 - Weather location not found");
+    let today = await axios.get(`${CURR_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
+    if (today.data.count) {
+        let weather = today.data.data[0];
+        let forecast = await getForecastWeather(weather, unit);
+        if (forecast) {
+            weather["high"] = forecast[0].high_temp; //First data in forecast is current day
+            weather["low"] = forecast[0].low_temp;
         }
-    } catch (err) {
-        console.error(err);
+        return weather;
+    } else {
+        return Promise.reject('404 - Location not found');
     }
 }
 
@@ -131,20 +160,16 @@ async function fetchCurrentWeather(location, unit) {
 async function fetchWeeklyWeather(location, unit) {
     if (!location) return;
     unit = unit || UNITS;
-    try {
-        let weather = {
-            city_name: location,
-            state_code: "",
-            county_code: "US"
-        }
-        let forecast = await getForecastWeather(weather, unit);
-        if(forecast) {
-            return forecast;
-        } else {
-            throw new Error("404 - Weather location not found");
-        }
-    } catch (err) {
-        console.error(err);
+    let weather = {
+        city_name: location,
+        state_code: "",
+        county_code: "US"
+    }
+    let forecast = await getForecastWeather(weather, unit);
+    if (forecast) {
+        return forecast;
+    } else {
+        return Promise.reject('404 - Location not found');
     }
 }
 
@@ -186,27 +211,24 @@ async function getForecastWeather(location_data, unit) {
 async function fetchForecast(location, unit) {
     if (!location) return;
     unit = unit || UNITS;
-    try {
-        let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
-        if (forecast.data.city_name) {
-            let city = forecast.data.city_name;
-            let state = forecast.data.state_code;
-            let country = forecast.data.country_code;
-            let date = getDateToday();
-            let forecast_data = forecast.data.data;
-            forecastDB.push(`/cities/${city},${state},${country}`, {
-                "updated_day": date,
-                "units": unit,
-                "forecast": [
-                    ...forecast_data
-                ]
-            });
-            return forecast_data;
-        } else {
-            throw new Error("404 - Weather location not found");
-        }
-    } catch (err) {
-        console.error(err);
+    let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
+    if (forecast.data.city_name) {
+        let city = forecast.data.city_name;
+        let state = forecast.data.state_code;
+        let country = forecast.data.country_code;
+        let date = getDateToday();
+        let forecast_data = forecast.data.data;
+        forecastDB.push(`/cities/${city},${state},${country}`, {
+            "location": `${city}, ${state}`,
+            "updated_day": date,
+            "units": unit,
+            "forecast": [
+                ...forecast_data
+            ]
+        });
+        return forecast_data;
+    } else {
+        return Promise.reject('404 - Location not found');
     }
 }
 
@@ -236,6 +258,8 @@ function getUnitSpeed(unit) {
     let speed = 'mph'; //Imperial
     switch (unit) {
         case 'M':
+            speed = 'km/h';
+            break;
         case 'S':
             speed = 'm/s';
             break;
@@ -243,6 +267,19 @@ function getUnitSpeed(unit) {
             break;
     }
     return speed;
+}
+
+function getUnitAmount(unit) {
+    let amount = 'in'; //Imperial
+    switch (unit) {
+        case 'M':
+        case 'S':
+            amount = 'mm';
+            break;
+        default:
+            break;
+    }
+    return amount;
 }
 
 // https://www.weatherbit.io/api/codes

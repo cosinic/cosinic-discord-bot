@@ -42,7 +42,7 @@ var WEATHER_COMMANDS = {
             let location = args.join(' ');
             fetchCurrentWeather(location, unit)
                 .then((weather_data) => {
-                    let location = weather_data.city_name;
+                    let location = weather_data.city_name + ', ' + weather_data.state_code;
                     let weather_id = weather_data.weather.code;
                     let description = weather_data.weather.description;
                     let temp = weather_data.temp;
@@ -83,13 +83,14 @@ var WEATHER_COMMANDS = {
                     }
 
                     const delayMessage = cb => {
-                        return delay(1000).then(() => { // Delay every 1 second
+                        return delay(300).then(() => {
                             cb();
                         });
                     }
 
                     // Discord rate limit = 5 messages every 5 seconds.
                     const displayLoop = async _ => {
+                        let dayInfo = '';
                         for (let i = 0; i < 7; i++) {
                             let date = weather_data[i].valid_date;
                             let weather_id = weather_data[i].weather.code;
@@ -106,7 +107,7 @@ var WEATHER_COMMANDS = {
                             let precip = weather_data[i].precip;
                             let snow = weather_data[i].snow;
 
-                            let dayInfo = `\n-----------------\n**${date}:**\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+                            dayInfo += `\n-----------------\n**${date}:**\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
                             if (precip > 0) {
                                 dayInfo += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
                             }
@@ -114,9 +115,13 @@ var WEATHER_COMMANDS = {
                                 dayInfo += `\nAccumulated snowfall: ${snow}${getUnitAmount(unit)}.`;
                             }
 
-                            await delayMessage(() => {
-                                received.channel.send(dayInfo);
-                            });
+                            if (i % 3 === 0 || i === 6) { // Posts every 3 messages to lessen discord rate limit
+                                await delayMessage(() => {
+                                    received.channel.send(dayInfo);
+                                    dayInfo = '';
+                                });
+                            }
+
                         }
                     }
 

@@ -61,6 +61,8 @@ function processCommand(receivedMessage) {
         case 'd':
         case String(primaryCommand.match(/d\d{1,3}/)): //Matches d[0-9]{1-3 digits}
             roll_commands.handleCommand(primaryCommand, arguments, receivedMessage);
+        case 'weatherweek':
+            weather_commands.week(arguments, receivedMessage);
             break;
         default:
             break;

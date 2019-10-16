@@ -24,8 +24,13 @@ const UNITS = 'I'; //M (Metric) | S (Scientific) | I (Imperial)
 var WEATHER_COMMANDS = {
     today(args, received) {
         if (args.length > 0) {
+            let unit = UNITS;
+            if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
+                unit = args[0];
+                args = args.slice(1);
+            }
             let location = args.join(' ');
-            fetchCurrentWeather(location)
+            fetchCurrentWeather(location, unit)
                 .then((weather_data) => {
                     if (!weather_data) {
                         received.channel.send(`:cloud_tornado: Error - Location not found`);
@@ -41,7 +46,7 @@ var WEATHER_COMMANDS = {
                     let high = weather_data.high || "N/A";
                     let low = weather_data.low || "N/A";
 
-                    let weatherInfo = `Current weather in ${location}: :${getWeatherEmoji(weather_id)}: ${description}\nTemperature: **${temp}°F** (Feels like ${feels_temp}°F)\nToday's High ${high}°F / Low ${low}°F\nWind Speeds: ${wind} mph ${wind_dir}`;
+                    let weatherInfo = `Current weather in ${location}: :${getWeatherEmoji(weather_id)}: ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nWind Speeds: ${wind}${getUnitSpeed(unit)} ${wind_dir}`;
                     received.channel.send(weatherInfo);
                 });
         }
@@ -54,13 +59,14 @@ var WEATHER_COMMANDS = {
  * Also fetches forecast since forecast holds high/low temps
  * 
  */
-async function fetchCurrentWeather(location) {
+async function fetchCurrentWeather(location, unit) {
     if (!location) return;
+    unit = unit || UNITS;
     try {
-        let today = await axios.get(`${CURR_WEATHER_URL}?key=${WEATHER_API}&units=${UNITS}&city=${location}`);
+        let today = await axios.get(`${CURR_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
         if (today.data.count) {
             let weather = today.data.data[0];
-            let forecast = await getForecastWeather(weather);
+            let forecast = await getForecastWeather(weather, unit);
             if (forecast) {
                 weather["high"] = forecast[0].high_temp; //First data in forecast is current day
                 weather["low"] = forecast[0].low_temp;
@@ -80,8 +86,9 @@ async function fetchCurrentWeather(location) {
  * We don't want to call forecast on the same day, so we check if we already cached it
  * 
  */
-async function getForecastWeather(location_data) {
+async function getForecastWeather(location_data, unit) {
     if (!location_data) return;
+    unit = unit || UNITS;
     let city = location_data.city_name;
     let state = location_data.state_code;
     let country = location_data.country_code;
@@ -89,7 +96,7 @@ async function getForecastWeather(location_data) {
         let forecast = forecastDB.getData(`/cities/${city},${state},${country}`);
         if (forecast.updated_day) {
             let date = getDateToday();
-            if (date === forecast.updated_day) {
+            if (date === forecast.updated_day && forecast.units === unit) {
                 return forecast.forecast;
             }
         }
@@ -97,7 +104,7 @@ async function getForecastWeather(location_data) {
         // Then file was not found
     }
 
-    let forecast = await fetchForecast(`${city},${state}`);
+    let forecast = await fetchForecast(`${city},${state}`, unit);
     if (forecast.length) {
         return forecast;
     }
@@ -108,10 +115,11 @@ async function getForecastWeather(location_data) {
  * Get the forecast and cache it into database for the day
  * 
  */
-async function fetchForecast(location) {
+async function fetchForecast(location, unit) {
     if (!location) return;
+    unit = unit || UNITS;
     try {
-        let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${UNITS}&city=${location}`);
+        let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
         if (forecast.data.city_name) {
             let city = forecast.data.city_name;
             let state = forecast.data.state_code;
@@ -120,6 +128,7 @@ async function fetchForecast(location) {
             let forecast_data = forecast.data.data;
             forecastDB.push(`/cities/${city},${state},${country}`, {
                 "updated_day": date,
+                "units": unit,
                 "forecast": [
                     ...forecast_data
                 ]
@@ -138,6 +147,34 @@ function getDateToday() {
     let date = new Date();
     date = `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear()}`;
     return date;
+}
+
+function getUnitDegrees(unit) {
+    let degree = '°F'; //Imperial 'MERICA
+    switch (unit) {
+        case 'M':
+            degree = '°C';
+            break;
+        case 'S':
+            degree = '°K';
+            break;
+        default:
+            break;
+    }
+    return degree;
+}
+
+function getUnitSpeed(unit) {
+    let speed = 'mph'; //Imperial
+    switch (unit) {
+        case 'M':
+        case 'S':
+            speed = 'm/s';
+            break;
+        default:
+            break;
+    }
+    return speed;
 }
 
 // https://www.weatherbit.io/api/codes

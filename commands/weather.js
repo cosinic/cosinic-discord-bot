@@ -22,6 +22,16 @@ const CURR_WEATHER_URL = 'https://api.weatherbit.io/v2.0/current';
 const FORECAST_WEATHER_URL = 'https://api.weatherbit.io/v2.0/forecast/daily';
 const UNITS = 'I'; //M (Metric) | S (Scientific) | I (Imperial)
 var WEATHER_COMMANDS = {
+    handleCommand(args, received) {
+        if (args.length) {
+            if (args[0] === "help") {
+                HELP_COMMANDS.help("weather", received);
+                return;
+            }
+
+            this.today(args, received);
+        }
+    },
     today(args, received) {
         if (args.length > 0) {
             let unit = UNITS;

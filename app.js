@@ -23,9 +23,10 @@ client.on('message', (receivedMessage) => {
 
 client.login(DISCORD_API); // Log into discord server
 
-global.client = client;
-
+global.client = client; // Puts Discord Client into global scope
 const help_commands = require('./commands/help.js');
+global.HELP_COMMANDS = help_commands; // Help commands into global scope
+
 const riot_commands = require('./commands/riot.js');
 const stock_commands = require('./commands/stock.js');
 const reddit_commands = require('./commands/reddit.js');
@@ -38,9 +39,6 @@ function processCommand(receivedMessage) {
     let arguments = splitCommand.slice(1) // All other words are arguments/parameters/options for the command
 
     switch (primaryCommand) {
-        case 'help':
-            help_commands.help(arguments, receivedMessage);
-            break;
         case 'lolstats':
             riot_commands.stats(arguments, receivedMessage);
             break;
@@ -48,16 +46,16 @@ function processCommand(receivedMessage) {
             riot_commands.sucks(arguments, receivedMessage);
             break;
         case 'stock':
-            stock_commands.getStock(arguments, receivedMessage);
+            stock_commands.handleCommand(arguments, receivedMessage);
             break;
         case 'stonk':
             stock_commands.getStonk(arguments, receivedMessage);
             break;
         case 'reddit':
-            reddit_commands.handleSchedule(arguments, receivedMessage);
+            reddit_commands.handleCommand(arguments, receivedMessage);
             break;
         case 'weather':
-            weather_commands.today(arguments, receivedMessage);
+            weather_commands.handleCommand(arguments, receivedMessage);
             break;
         default:
             break;

@@ -2,7 +2,7 @@ var HELP_COMMANDS = {
     help(args, received) {
         if (args.length > 0) {
             let help_text = '';
-            switch (args.join(' ')) {
+            switch (args) {
                 case 'lolstats':
                     help_text = "You can use this command like: `!lolstats [SUMMONER_USERNAME]`";
                     break;
@@ -22,7 +22,7 @@ var HELP_COMMANDS = {
             }
             received.channel.send(help_text);
         } else {
-            received.channel.send("I'm not sure what you need help with. Try `!help [topic]`")
+            received.channel.send("I'm not sure what you need help with. Try `![topic] help`")
         }
     }
 }

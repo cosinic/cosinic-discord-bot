@@ -28,9 +28,13 @@ var redditDB = new JsonDB(new JsonDBConfig("db/reddit", true, false, '/'));
 
 //!reddit [SUBREDDIT] [Time in HH:MM format 24 hour standard (multiple times separated by commas)] [top|hot|rising]
 var REDDIT_COMMANDS = {
-    handleSchedule(args, received) {
+    handleCommand(args, received) {
         if (received.channel.type !== "text") {
             received.channel.send(`You can only set this on a text channel`);
+            return false;
+        }
+        if (args[0] === "help") {
+            HELP_COMMANDS.help("reddit", received);
             return false;
         }
         if (args.length > 1) {
@@ -61,7 +65,7 @@ var REDDIT_COMMANDS = {
                     received.channel.send(`Scheduled to post on this channel: **/r/${subreddit}** every day at ${data.times} sorting via ${sort}. Type \`!reddit ${subreddit} STOP\` to delete this schedule.`);
             });
         } else {
-            received.channel.send("Error understanding !reddit format. Type `!help reddit` for how to use.");
+            received.channel.send("Error understanding !reddit format. Type `!reddit help` for how to use.");
         }
     },
     deleteSchedule(channel_id, subreddit) {

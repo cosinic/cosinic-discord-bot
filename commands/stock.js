@@ -4,7 +4,15 @@ const IEX_API = process.env.IEX_API;
 const IEX_URL = `https://cloud.iexapis.com/stable/`;
 
 var STOCK_COMMANDS = {
-
+    handleCommand(args, received) {
+        if (args.length) {
+            if (args[0] === "help") {
+                HELP_COMMANDS.help("stock", received);
+                return;
+            }
+            this.getStock(args, received);
+        }
+    },
     getStock(args, received) {
         if (args.length) {
             const TICKER = args[0];

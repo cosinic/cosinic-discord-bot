@@ -18,7 +18,7 @@ var HELP_COMMANDS = {
                     help_text = "You can use this command like: `!weather (optional:default=I)[UNIT(M=Metric|S=Scientific|I=Imperial)] [CITY_NAME]`"
                     break;
                 case 'diceroll':
-                    help_text = "You can use this command like: `!d [NUMBER]` or `!d[4|6|8|10|12|20|100]` or `!d [MIN] [MAX]`";
+                    help_text = "You can use this command like: `!d [NUMBER]` or `!d[1-999]` or `!d [MIN] [MAX]`";
                     break;
                 default:
                     break;

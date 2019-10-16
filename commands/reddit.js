@@ -14,11 +14,12 @@ const r = new snoowrap({
 
 /* JSON DB LAYOUT
 channels: {
-  id
-  subreddits: {
-    subreddit_name: {
-        post_times: [],
-        sort: top/hot/rising
+  id: {
+    subreddits: {
+        subreddit_name: {
+            post_times: [],
+            sort: top/hot/rising
+        }
     }
   }
 }

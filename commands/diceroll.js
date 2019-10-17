@@ -42,6 +42,9 @@ async function getRoll(minimum, maximum) {
     if (minimum < 1) {
         return Promise.reject('Minimum number must be greater than 0');
     }
+    if (isNaN(minimum) || isNaN(maximum)) {
+        return Promise.reject('Invalid input');
+    }
     if (minimum >= maximum) {
         return Promise.reject('Minimum number should be less than maximum');
     } else if (distance > 281474976710655) {

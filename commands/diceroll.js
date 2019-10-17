@@ -1,4 +1,4 @@
-const crypto = require("crypto");
+var rand = require("random-number-csprng"); // https://www.npmjs.com/package/random-number-csprng
 const DICE_EMOJI = ':game_die:'; // Discord dice emoji
 const ERROR_EMOJI = ':interrobang:'; // Discord dice emoji
 
@@ -9,7 +9,6 @@ var DICEROLL_COMMANDS = {
             return;
         }
 
-        //Default d6
         let min_roll = 1,
             max_roll = 6;
         if (primary === 'd') { // If it's a format like !d [MAX]
@@ -52,33 +51,7 @@ async function getRoll(minimum, maximum) {
     } else if (maximum > Number.MAX_SAFE_INTEGER) {
         return Promise.reject('Maximum number should be below safe integer limit');
     } else {
-        var maxBytes = 6;
-        var maxDec = 281474976710656;
-
-        if (distance < 256) {
-            maxBytes = 1;
-            maxDec = 256;
-        } else if (distance < 65536) {
-            maxBytes = 2;
-            maxDec = 65536;
-        } else if (distance < 16777216) {
-            maxBytes = 3;
-            maxDec = 16777216;
-        } else if (distance < 4294967296) {
-            maxBytes = 4;
-            maxDec = 4294967296;
-        } else if (distance < 1099511627776) {
-            maxBytes = 4;
-            maxDec = 1099511627776;
-        }
-
-        var randbytes = await parseInt(crypto.randomBytes(maxBytes).toString('hex'), 16);
-        var result = Math.floor(randbytes / maxDec * (maximum - minimum + 1) + minimum);
-
-        if (result > maximum) {
-            result = maximum;
-        }
-        return result;
+        return await rand(minimum, maximum);
     }
 }
 

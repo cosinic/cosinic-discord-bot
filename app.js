@@ -5,6 +5,13 @@ const DISCORD_API = process.env.BOT_SECRET;
 
 client.on('ready', () => {
     console.log("Bot is running");
+    client.user.setStatus('available');
+    client.user.setPresence({
+        game: {
+            name: 'for ! in Cosinic',
+            type: "WATCHING"
+        }
+    });
 });
 
 client.on('message', (receivedMessage) => {

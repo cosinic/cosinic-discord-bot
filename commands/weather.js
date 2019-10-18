@@ -203,7 +203,7 @@ async function getForecastWeather(location_data, unit) {
     }
 
     let forecast = await fetchForecast(`${city},${state}`, unit);
-    if (forecast.length) {
+    if (forecast.forecast) {
         return forecast;
     }
 }
@@ -223,15 +223,16 @@ async function fetchForecast(location, unit) {
         let country = forecast.data.country_code;
         let date = getDateToday();
         let forecast_data = forecast.data.data;
-        forecastDB.push(`/cities/${city},${state},${country}`, {
+        let new_forecast = {
             "location": `${city}, ${state}`,
             "updated_day": date,
             "units": unit,
             "forecast": [
                 ...forecast_data
             ]
-        });
-        return forecast_data;
+        }
+        forecastDB.push(`/cities/${city},${state},${country}`, new_forecast);
+        return new_forecast;
     } else {
         return Promise.reject('404 - Location not found');
     }

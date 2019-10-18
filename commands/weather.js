@@ -71,9 +71,9 @@ var WEATHER_COMMANDS = {
             }
             let location = args.join(' ');
             fetchWeeklyWeather(location, unit)
-                .then((weather_data) => {
-
-                    location = weather_data.location || location;
+                .then((data) => {
+                    let weather_data = data.forecast;
+                    location = data.location || location;
                     let equalsSignLength = 50;
                     let header = `${'='.repeat(equalsSignLength)}\n${' '.repeat((equalsSignLength * 2 - 19 - location.length)/2)}7 Day Forecast for ${location}\n${'='.repeat(equalsSignLength)}`;
                     received.channel.send(header);
@@ -147,9 +147,9 @@ async function fetchCurrentWeather(location, unit) {
     if (today.data.count) {
         let weather = today.data.data[0];
         let forecast = await getForecastWeather(weather, unit);
-        if (forecast) {
-            weather["high"] = forecast[0].high_temp; //First data in forecast is current day
-            weather["low"] = forecast[0].low_temp;
+        if (forecast.forecast) {
+            weather["high"] = forecast.forecast[0].high_temp; //First data in forecast is current day
+            weather["low"] = forecast.forecast[0].low_temp;
         }
         return weather;
     } else {
@@ -171,7 +171,7 @@ async function fetchWeeklyWeather(location, unit) {
         county_code: "US"
     }
     let forecast = await getForecastWeather(weather, unit);
-    if (forecast) {
+    if (forecast.forecast) {
         return forecast;
     } else {
         return Promise.reject('404 - Location not found');
@@ -195,7 +195,7 @@ async function getForecastWeather(location_data, unit) {
         if (forecast.updated_day) {
             let date = getDateToday();
             if (date === forecast.updated_day && forecast.units === unit) {
-                return forecast.forecast;
+                return forecast;
             }
         }
     } catch (err) {

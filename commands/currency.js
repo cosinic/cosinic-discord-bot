@@ -116,8 +116,8 @@ async function pay(senderId, receiverId, amount) {
     }
 
     if (sender.balance >= amount) {
-        await bank.push(`/accounts/${senderId}/balance`, sender.balance - amount);
-        await bank.push(`/accounts/${receiverId}/balance`, receiver.balance + amount);
+        bank.push(`/accounts/${senderId}/balance`, sender.balance - amount);
+        bank.push(`/accounts/${receiverId}/balance`, receiver.balance + amount);
         return {
             "success": true,
             "amount": amount

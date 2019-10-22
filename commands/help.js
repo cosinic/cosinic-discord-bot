@@ -20,6 +20,10 @@ var HELP_COMMANDS = {
                 case 'diceroll':
                     help_text = "You can use this command like: `!d [NUMBER]` or `!d[1-999]` or `!d [MIN] [MAX]`";
                     break;
+                case 'cc':
+                    help_text = "You can use this command like: `!cc [balance|pay] @TAG_A_USER [AMOUNT]`";
+                    help_text += "\nE.G. `!cc pay @bob 5`";
+                    break;
                 default:
                     break;
             }

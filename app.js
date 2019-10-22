@@ -39,6 +39,7 @@ const stock_commands = require('./commands/stock.js');
 const reddit_commands = require('./commands/reddit.js');
 const weather_commands = require('./commands/weather.js');
 const roll_commands = require('./commands/diceroll.js');
+const currency_commands = require('./commands/currency.js');
 
 function processCommand(receivedMessage) {
     let fullCommand = receivedMessage.content.substr(1) // Remove the leading exclamation mark
@@ -71,6 +72,9 @@ function processCommand(receivedMessage) {
             break;
         case 'weatherweek':
             weather_commands.week(arguments, receivedMessage);
+            break;
+        case 'cc':
+            currency_commands.handleCommand(arguments, receivedMessage);
             break;
         default:
             break;

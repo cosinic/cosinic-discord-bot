@@ -48,6 +48,7 @@ var WEATHER_COMMANDS = {
                     let temp = weather_data.temp;
                     let feels_temp = weather_data.app_temp;
                     let wind = weather_data.wind_spd;
+                    let humidity = weather_data.rh;
                     if (unit === "M") {
                         wind = wind * 3.6;
                     }
@@ -55,7 +56,7 @@ var WEATHER_COMMANDS = {
                     let high = weather_data.high || "N/A";
                     let low = weather_data.low || "N/A";
 
-                    let weatherInfo = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+                    let weatherInfo = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nRelative Humidity: ${humidity}%\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
                     received.channel.send(weatherInfo);
                 }).catch(err => {
                     received.channel.send(`:cloud_tornado: Error ${err}`);

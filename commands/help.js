@@ -32,6 +32,27 @@ var HELP_COMMANDS = {
         } else {
             received.channel.send("I'm not sure what you need help with. Try `![topic] help`")
         }
+    },
+    helpGames(args, received) {
+        if (args.length > 0) {
+            let help_text = '';
+            switch (args) {
+                case 'games':
+                    help_text = `You can play games by typing \`!cc [GAME] [GAME_OPTIONS]\``;
+                    help_text += "\nCurrent GAMEs:\nRoulette (Type `!cc roulette help` for more info)";
+                    break;
+                case 'roulette':
+                    help_text = `You can play roulette by typing \`!cc roulette [AMOUNT_TO_BET] [(ROULETTE_OPTIONS)|ROULETTE_NUMBER]\`.`;
+                    help_text += `\nROULETTE_OPTIONS are: \`[even | odd | red | black | 1-18 | 19-36 | 1-12 | 13-24 | 25-36]\``;
+                    break;
+                default:
+                    help_text = "I'm not sure what you need help with. Try `![topic] help`";
+                    break;
+            }
+            received.channel.send(help_text);
+        } else {
+            received.channel.send("I'm not sure what you need help with. Try `![topic] help`")
+        }
     }
 }
 

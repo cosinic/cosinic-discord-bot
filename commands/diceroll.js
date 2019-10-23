@@ -30,6 +30,15 @@ var DICEROLL_COMMANDS = {
                 received.channel.send(`${DICE_EMOJI}${ERROR_EMOJI} ${err}`);
             });
     },
+    async runRoulette() {
+        return await getRoll(0, 37)
+            .then(num => {
+                console.log(num);
+                return num;
+            }).catch(err => {
+                return err;
+            });
+    },
     displayRoll(number, received) {
         let whoRolled = received.author.username;
         received.channel.send(`${DICE_EMOJI} ${whoRolled} rolled: ${number}`);
@@ -38,8 +47,8 @@ var DICEROLL_COMMANDS = {
 
 async function getRoll(minimum, maximum) {
     var distance = maximum - minimum;
-    if (minimum < 1) {
-        return Promise.reject('Minimum number must be greater than 0');
+    if (minimum < 0) {
+        return Promise.reject('Minimum number must be a positive number');
     }
     if (isNaN(minimum) || isNaN(maximum)) {
         return Promise.reject('Invalid input');

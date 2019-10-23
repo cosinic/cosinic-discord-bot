@@ -36,11 +36,16 @@ var CURRENCY_COMMANDS = {
             case "send":
                 this.payUser(userId, username, args.slice(1), received);
                 return;
+            case "botbalance":
+                this.displayBalance(client.user.id, client.user.username, received);
+                return;
             case "balance":
                 this.displayBalance(userId, username, received);
                 return;
             case "steal":
-
+                return;
+            case "roulette":
+                CURRENCY_GAMES.handleCommand(args, received);
                 return;
         }
     },
@@ -75,6 +80,15 @@ var CURRENCY_COMMANDS = {
             received.channel.send("Invalid send format.");
             HELP_COMMANDS.help("cc", received);
         }
+    },
+    depositToUser(userId, amount) {
+        return deposit(userId, amount);
+    },
+    withdrawFromUser(userId, amount) {
+        return withdraw(userId, amount);
+    },
+    depositToBot(amount) {
+        return deposit(client.user.id, amount);
     }
 }
 
@@ -100,6 +114,35 @@ function getBalance(userId) {
     }
 }
 
+async function deposit(userId, amount) {
+    try {
+        let user = bank.getData(`/accounts/${userId}`);
+        let balance = user.balance;
+        bank.push(`/accounts/${userId}/balance`, balance + amount);
+        return Promise.resolve(balance + amount);
+    } catch (err) {
+        let balance = openAccount(userId).balance;
+        bank.push(`/accounts/${userId}/balance`, balance + amount);
+        return Promise.resolve(balance + amount);
+    }
+}
+
+async function withdraw(userId, amount) {
+    try {
+        let user = bank.getData(`/accounts/${userId}`);
+        let balance = user.balance;
+        if (balance - amount < 0) {
+            return Promise.reject('Not enough balance in account');
+        }
+        bank.push(`/accounts/${userId}/balance`, balance - amount);
+        return Promise.resolve(balance - amount);
+    } catch (err) {
+        let balance = openAccount(userId).balance;
+        bank.push(`/accounts/${userId}/balance`, balance - amount);
+        return Promise.resolve(balance - amount);
+    }
+}
+
 async function pay(senderId, receiverId, amount) {
     let sender, receiver;
     try {
@@ -121,18 +164,17 @@ async function pay(senderId, receiverId, amount) {
     if (amount < 0) {
         return Promise.reject(`You cannot send negative ${formatCurrency(0)}`);
     }
-
-    if (sender.balance >= amount) {
-        bank.push(`/accounts/${senderId}/balance`, sender.balance - amount);
-        bank.push(`/accounts/${receiverId}/balance`, receiver.balance + amount);
+    try {
+        await withdraw(senderId, amount);
+        await deposit(receiverId, amount);
         return Promise.resolve({
             "success": true,
             "amount": amount,
             "senderBalance": sender.balance - amount
         });
-    } else {
+    } catch (err) {
         let balance = sender.balance;
-        return Promise.reject(`${EMOJI_MONEY_MOUTH} You don't have enough in your account to send ${amount} ${formatCurrency(amount)}\n Your current balance is: ${balance} ${formatCurrency(balance)}`);
+        return Promise.reject(`${EMOJI_MONEY_MOUTH} You don't have enough in your account to send ${amount} ${formatCurrency(amount)}`);
     }
 }
 
@@ -141,3 +183,4 @@ function formatCurrency(amount) {
 }
 
 module.exports = CURRENCY_COMMANDS;
+var CURRENCY_GAMES = require('./games.js');

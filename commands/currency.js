@@ -33,6 +33,7 @@ var CURRENCY_COMMANDS = {
 
         switch (args[0]) {
             case "pay":
+            case "send":
                 this.payUser(userId, username, args.slice(1), received);
                 return;
             case "balance":
@@ -57,7 +58,7 @@ var CURRENCY_COMMANDS = {
                 HELP_COMMANDS.help("cc", received);
                 return;
             } else {
-                receiverId = receiverId.match(/<@!([0-9]+)>/)[1];
+                receiverId = receiverId.match(/<@!?([0-9]+)>/)[1];
             }
 
             let amount = Math.round(args[1] * 100) / 100;
@@ -114,7 +115,7 @@ async function pay(senderId, receiverId, amount) {
     }
 
     if (senderId === receiverId) {
-        return Promise.reject(`You cannot send money to yourself :slight_smile::point_right:    :point_left::upside_down:`);
+        return Promise.reject(`You cannot send money to yourself :open_mouth::point_right:    :point_left::hushed:`);
     }
 
     if (amount < 0) {

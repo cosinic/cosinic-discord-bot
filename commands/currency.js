@@ -52,8 +52,8 @@ var CURRENCY_COMMANDS = {
         if (args[0] && args[1]) {
             let receiverId = args[0];
 
-            if (receiverId.match(/<@![0-9]+>/) === null) {
-                received.channel.send("Invalid format to send.");
+            if (receiverId.match(/<@!?[0-9]+>/) === null) {
+                received.channel.send("Invalid send format.");
                 HELP_COMMANDS.help("cc", received);
                 return;
             } else {
@@ -63,13 +63,15 @@ var CURRENCY_COMMANDS = {
             let amount = Math.round(args[1] * 100) / 100;
             pay(userId, receiverId, amount)
                 .then(data => {
-                    received.channel.send(`${EMOJI_DOLLAR} ${username} has sent <@!${receiverId}> ${EMOJI_MONEY_WINGS}${amount} ${formatCurrency(amount)}`);
+                    let message = `${EMOJI_MONEY}  ${username}  ${EMOJI_DOLLAR}:arrow_right:  <@${receiverId}> ${EMOJI_MONEY_WINGS} ${data.amount} ${formatCurrency(data.amount)}`;
+                    //message += `\n        New balance: ${data.senderBalance} ${formatCurrency(data.senderBalance)}`;
+                    received.channel.send(message);
                 })
                 .catch(error => {
                     received.channel.send(error);
                 });
         } else {
-            received.channel.send("Invalid format to send.");
+            received.channel.send("Invalid send format.");
             HELP_COMMANDS.help("cc", received);
         }
     }
@@ -118,10 +120,11 @@ async function pay(senderId, receiverId, amount) {
     if (sender.balance >= amount) {
         bank.push(`/accounts/${senderId}/balance`, sender.balance - amount);
         bank.push(`/accounts/${receiverId}/balance`, receiver.balance + amount);
-        return {
+        return Promise.resolve({
             "success": true,
-            "amount": amount
-        };
+            "amount": amount,
+            "senderBalance": sender.balance - amount
+        });
     } else {
         let balance = sender.balance;
         return Promise.reject(`${EMOJI_MONEY_MOUTH} You don't have enough in your account to send ${amount} ${formatCurrency(amount)}\n Your current balance is: ${balance} ${formatCurrency(balance)}`);

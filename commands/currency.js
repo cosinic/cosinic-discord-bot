@@ -113,6 +113,10 @@ async function pay(senderId, receiverId, amount) {
         receiver = openAccount(receiverId);
     }
 
+    if (senderId === receiverId) {
+        return Promise.reject(`You cannot send money to yourself :slight_smile::point_right:    :point_left::upside_down:`);
+    }
+
     if (amount < 0) {
         return Promise.reject(`You cannot send negative ${formatCurrency(0)}`);
     }

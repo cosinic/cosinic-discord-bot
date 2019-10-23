@@ -62,9 +62,10 @@ var GAMES = {
 }
 
 function sanitizeAmount(amount) {
-    if (amount === 1)
-        return amount;
-    if (amount % (!isNaN(parseFloat(amount)) >= 0) && 0 <= ~~amount) {
+    if(amount > Number.MAX_SAFE_INTEGER){
+        return 0;
+    }
+    if ((amount % (!isNaN(parseFloat(amount))) >= 0) && 0 <= ~~amount) {
         return Math.round(amount * 100) / 100;
     }
     return 0;

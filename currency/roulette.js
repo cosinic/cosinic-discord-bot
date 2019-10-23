@@ -78,6 +78,9 @@ var ROULETTE = {
                 }
                 break;
             case "00":
+                if (spunNumber === "00") {
+                    win = true;
+                }
                 break;
             default: //Default is a single number
                 bet_type = "single";

@@ -12,3 +12,6 @@
 #### Weather Checker
 - [x] ~~Add forecast weather display~~ *(10/16/2019)*
 - [ ] Add a scheduler that posts at a certain time of day
+
+#### Currency Games
+- [ ] Roulette add Splits, Street, Corner, and Sixline

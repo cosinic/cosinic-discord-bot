@@ -33,7 +33,6 @@ var DICEROLL_COMMANDS = {
     async runRoulette() {
         return await getRoll(0, 37)
             .then(num => {
-                console.log(num);
                 return num;
             }).catch(err => {
                 return err;

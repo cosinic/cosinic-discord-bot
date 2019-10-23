@@ -33,12 +33,12 @@ var ROULETTE = {
         }
         switch (format) {
             case "even":
-                if (spunNumber % 2 === 0) {
+                if (spunNumber % 2 === 0 && spunNumber !== 0 && spunNumber !== "00") {
                     win = true;
                 }
                 break;
             case "odd":
-                if (spunNumber % 2 !== 0) {
+                if (spunNumber % 2 !== 0 && spunNumber !== 0 && spunNumber !== "00") {
                     win = true;
                 }
                 break;

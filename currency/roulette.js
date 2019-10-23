@@ -90,17 +90,20 @@ var ROULETTE = {
                 }
                 break;
         }
+        let color = REDS.indexOf(spunNumber) > -1 ? "Red" : BLACKS.indexOf(spunNumber) > -1 ? "Black" : "Green";
         if (win) {
             return Promise.resolve({
                 "win": true,
                 "multiplyer": MULTIPLYER[bet_type],
-                "number": spunNumber
+                "number": spunNumber,
+                "color": color
             });
         }
         return Promise.resolve({
             "win": false,
             "multiplyer": 0,
-            "number": spunNumber
+            "number": spunNumber,
+            "color": color
         });
     }
 }

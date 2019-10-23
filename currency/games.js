@@ -41,11 +41,11 @@ var GAMES = {
                     let multiplyer = result.multiplyer;
                     let payout = parseInt(amount) * multiplyer;
                     BANK.depositToUser(userId, payout);
-                    return Promise.resolve(`Ball Landed On: ${result.number}\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
+                    return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
                 } else {
                     BANK.withdrawFromUser(userId, parseInt(amount));
                     BANK.depositToBot(parseInt(amount));
-                    return Promise.resolve(`Ball Landed On: ${result.number}\n:money_with_wings: Better luck next time, <@${userId}>.`);
+                    return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_with_wings: Better luck next time, <@${userId}>.`);
                 }
             }).catch(err => {
                 return Promise.reject(err);

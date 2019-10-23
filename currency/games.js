@@ -50,7 +50,7 @@ var GAMES = {
                     let multiplyer = result.multiplyer;
                     let payout = sanitizeAmount(amount * multiplyer);
                     BANK.depositToUser(userId, payout);
-                    BANK.depositToBot(sanitizeAmount(payout / 4)); // Give Bank outside 25% of earnings (for Dividends/Rewards Pool)
+                    BANK.depositToBot(sanitizeAmount(payout / 6.66)); // Give Bank outside 15% of earnings (for Dividends/Rewards Pool)
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
                 } else {
                     BANK.depositToBot(sanitizeAmount(amount));

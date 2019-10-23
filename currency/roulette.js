@@ -88,6 +88,9 @@ var ROULETTE = {
                 if (isNaN(format)) {
                     return Promise.reject(`Error in roulette options format`);
                 }
+                if (bet > 36) {
+                    return Promise.reject(`Error: Roulette table goes from 0 - 36`);
+                }
                 if (bet === spunNumber) {
                     win = true;
                 }

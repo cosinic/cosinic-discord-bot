@@ -67,6 +67,7 @@ var CURRENCY_COMMANDS = {
             }
 
             let amount = Math.round(args[1] * 100) / 100;
+            amount = isGoodAmount(amount) ? amount : 0;
             pay(userId, receiverId, amount)
                 .then(data => {
                     let message = `${EMOJI_MONEY}  ${username}  ${EMOJI_DOLLAR}:arrow_right:  <@${receiverId}> ${EMOJI_MONEY_WINGS} ${data.amount} ${formatCurrency(data.amount)}`;
@@ -85,12 +86,15 @@ var CURRENCY_COMMANDS = {
         return getBalance(userId);
     },
     depositToUser(userId, amount) {
+        amount = isGoodAmount(amount) ? amount : 0;
         return deposit(userId, amount);
     },
     withdrawFromUser(userId, amount) {
+        amount = isGoodAmount(amount) ? amount : 0;
         return withdraw(userId, amount);
     },
     depositToBot(amount) {
+        amount = isGoodAmount(amount) ? amount : 0;
         return deposit(client.user.id, amount);
     }
 }
@@ -179,6 +183,10 @@ async function pay(senderId, receiverId, amount) {
         let balance = sender.balance;
         return Promise.reject(`${EMOJI_MONEY_MOUTH} You don't have enough in your account to send ${amount} ${formatCurrency(amount)}`);
     }
+}
+
+function isGoodAmount(amount) {
+    return 0 === amount % (!isNaN(parseFloat(amount)) && 0 <= ~~amount);
 }
 
 function formatCurrency(amount) {

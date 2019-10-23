@@ -1,6 +1,7 @@
 require('dotenv').config();
 var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
+var cron = require('node-cron');
 
 var bank = new JsonDB(new JsonDBConfig("db/bank", true, false, '/'));
 
@@ -67,7 +68,7 @@ var CURRENCY_COMMANDS = {
             }
 
             let amount = Math.round(args[1] * 100) / 100;
-            amount = isGoodAmount(amount) ? amount : 0;
+            amount = sanitizeAmount(amount);
             pay(userId, receiverId, amount)
                 .then(data => {
                     let message = `${EMOJI_MONEY}  ${username}  ${EMOJI_DOLLAR}:arrow_right:  <@${receiverId}> ${EMOJI_MONEY_WINGS} ${data.amount} ${formatCurrency(data.amount)}`;
@@ -86,15 +87,15 @@ var CURRENCY_COMMANDS = {
         return getBalance(userId);
     },
     depositToUser(userId, amount) {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         return deposit(userId, amount);
     },
     withdrawFromUser(userId, amount) {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         return withdraw(userId, amount);
     },
     depositToBot(amount) {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         return deposit(client.user.id, amount);
     }
 }
@@ -123,13 +124,13 @@ function getBalance(userId) {
 
 async function deposit(userId, amount) {
     try {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
         bank.push(`/accounts/${userId}/balance`, balance + amount);
         return Promise.resolve(balance + amount);
     } catch (err) {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         let balance = openAccount(userId).balance;
         bank.push(`/accounts/${userId}/balance`, balance + amount);
         return Promise.resolve(balance + amount);
@@ -138,7 +139,7 @@ async function deposit(userId, amount) {
 
 async function withdraw(userId, amount) {
     try {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
         if (balance - amount < 0) {
@@ -147,7 +148,7 @@ async function withdraw(userId, amount) {
         bank.push(`/accounts/${userId}/balance`, balance - amount);
         return Promise.resolve(balance - amount);
     } catch (err) {
-        amount = isGoodAmount(amount) ? amount : 0;
+        amount = sanitizeAmount(amount);
         let balance = openAccount(userId).balance;
         bank.push(`/accounts/${userId}/balance`, balance - amount);
         return Promise.resolve(balance - amount);
@@ -156,7 +157,7 @@ async function withdraw(userId, amount) {
 
 async function pay(senderId, receiverId, amount) {
     let sender, receiver;
-    amount = isGoodAmount(amount) ? amount : 0;
+    amount = sanitizeAmount(amount);
 
     if (senderId === receiverId) {
         return Promise.reject(`You cannot send ${formatCurrency(0)} to yourself :open_mouth::point_right:   :point_left::hushed:`);
@@ -192,13 +193,72 @@ async function pay(senderId, receiverId, amount) {
     }
 }
 
-function isGoodAmount(amount) {
-    return 0 === amount % (!isNaN(parseFloat(amount)) && 0 <= ~~amount);
+function sanitizeAmount(amount) {
+    if (amount % (!isNaN(parseFloat(amount)) >= 0) && 0 <= ~~amount) {
+        return Math.round(amount * 100) / 100;
+    }
+    return 0;
 }
 
 function formatCurrency(amount) {
     return `${CURRENCY}${amount !== 1 ? "s" : ""}`;
 }
+
+/**
+ * 
+ * Name courtesy from Sam (Skeltch)
+ * 
+ */
+function freedomDividend(accounts) {
+    let bank_balance = getBalance(client.user.id);
+    let distributionAmount = sanitizeAmount(bank_balance / 4); // 25% of bank goes to the people
+    withdraw(client.user.id, distributionAmount);
+    let distributed_per_person = sanitizeAmount(distributionAmount / accounts.length);
+    accounts.forEach(id => {
+        deposit(id, distributed_per_person);
+        client.users.get(id).send(`${EMOJI_MONEY} You have been given freedom dividends of ${distributed_per_person} ${formatCurrency(distributed_per_person)}!`);
+    });
+}
+
+function checkEconomy() {
+    try {
+        let bot_id = client.user.id;
+        let accounts = bank.getData('/accounts');
+        let population = Object.keys(accounts).length;
+
+        let avg = Object.keys(accounts).reduce((sum, id) => {
+            if (id === bot_id) { // Don't count the bot balance
+                population--;
+                return sum;
+            } else {
+                return sum + accounts[id].balance
+            }
+        }, 0) / population;
+
+        let toDonate = [];
+        for (let id in accounts) {
+            if (id !== bot_id) {
+                if (accounts[id].balance < (avg / 2)) { // If the user's balance is below 25% of the average economy (avg = 50%, avg/2 = 25%)
+                    toDonate.push(id); // Then put them on the donor list
+                }
+            }
+        }
+        
+        if (toDonate.length) {
+            freedomDividend(toDonate);
+        }
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// Run everyday 4 PM (16 second tick)
+cron.schedule('* * * * *', () => {
+    checkEconomy();
+}, {
+    timezone: "America/New_York"
+});
 
 module.exports = CURRENCY_COMMANDS;
 var CURRENCY_GAMES = require('./games.js');

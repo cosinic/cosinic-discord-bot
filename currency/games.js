@@ -10,7 +10,7 @@ var GAMES = {
             return;
         }
         let game = args[0];
-        let amount = isGoodAmount(args[1]) ? args[1] : 0;
+        let amount = sanitizeAmount(args[1]);
         args = args.slice(2);
         let userId = received.author.id;
         if (args) {
@@ -48,7 +48,7 @@ var GAMES = {
             .then(result => {
                 if (result.win) {
                     let multiplyer = result.multiplyer;
-                    let payout = parseInt(amount) * multiplyer;
+                    let payout = sanitizeAmount(parseInt(amount) * multiplyer);
                     BANK.depositToUser(userId, payout);
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
                 } else {
@@ -61,9 +61,13 @@ var GAMES = {
     }
 }
 
-function isGoodAmount(amount) {
-    return 0 === amount % (!isNaN(parseFloat(amount)) && 0 <= ~~amount);
+function sanitizeAmount(amount) {
+    if (amount % (!isNaN(parseFloat(amount)) >= 0) && 0 <= ~~amount) {
+        return Math.round(amount * 100) / 100;
+    }
+    return 0;
 }
+
 
 function formatCurrency(amount) {
     return `${CURRENCY}${amount !== 1 ? "s" : ""}`;

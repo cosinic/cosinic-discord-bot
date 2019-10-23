@@ -194,6 +194,8 @@ async function pay(senderId, receiverId, amount) {
 }
 
 function sanitizeAmount(amount) {
+    if (amount === 1)
+        return amount;
     if (amount % (!isNaN(parseFloat(amount)) >= 0) && 0 <= ~~amount) {
         return Math.round(amount * 100) / 100;
     }
@@ -243,7 +245,7 @@ function checkEconomy() {
                 }
             }
         }
-        
+
         if (toDonate.length) {
             freedomDividend(toDonate);
         }
@@ -253,8 +255,8 @@ function checkEconomy() {
     }
 }
 
-// Run everyday 4 PM (16 second tick)
-cron.schedule('* * * * *', () => {
+// Run every hour
+cron.schedule('0 * * * *', () => {
     checkEconomy();
 }, {
     timezone: "America/New_York"

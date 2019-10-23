@@ -62,6 +62,8 @@ var GAMES = {
 }
 
 function sanitizeAmount(amount) {
+    if (amount === 1)
+        return amount;
     if (amount % (!isNaN(parseFloat(amount)) >= 0) && 0 <= ~~amount) {
         return Math.round(amount * 100) / 100;
     }

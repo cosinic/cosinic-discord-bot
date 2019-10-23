@@ -2,6 +2,8 @@ const ROULETTE = require('./roulette.js');
 const BANK = require('./currency.js');
 const CURRENCY = 'Cosinic Coin';
 
+const TAX_RATE = .15;
+
 var GAMES = {
     //!cc roulette [AMOUNT] [args]
     handleCommand(args, received) {
@@ -48,10 +50,10 @@ var GAMES = {
             .then(result => {
                 if (result.win) {
                     let multiplyer = result.multiplyer;
-                    let payout = sanitizeAmount(amount * multiplyer);
+                    let payout = sanitizeAmount(amount * multiplyer * (1 - TAX_RATE));
                     BANK.depositToUser(userId, payout);
-                    BANK.depositToBot(sanitizeAmount(payout / 6.66)); // Give Bank outside 15% of earnings (for Dividends/Rewards Pool)
-                    return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
+                    BANK.depositToBot(sanitizeAmount(payout * TAX_RATE)); // Give Bank outside 15% of earnings (for Dividends/Rewards Pool)
+                    return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)} *(Tax: ${TAX_RATE * 100}%)*`);
                 } else {
                     BANK.depositToBot(sanitizeAmount(amount));
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_with_wings: Better luck next time, <@${userId}>.`);

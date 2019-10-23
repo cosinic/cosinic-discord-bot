@@ -38,6 +38,7 @@ var CURRENCY_COMMANDS = {
                 this.payUser(userId, username, args.slice(1), received);
                 return;
             case "botbalance":
+            case "bank":
                 this.displayBalance(client.user.id, client.user.username, received);
                 return;
             case "balance":

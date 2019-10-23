@@ -123,11 +123,13 @@ function getBalance(userId) {
 
 async function deposit(userId, amount) {
     try {
+        amount = isGoodAmount(amount) ? amount : 0;
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
         bank.push(`/accounts/${userId}/balance`, balance + amount);
         return Promise.resolve(balance + amount);
     } catch (err) {
+        amount = isGoodAmount(amount) ? amount : 0;
         let balance = openAccount(userId).balance;
         bank.push(`/accounts/${userId}/balance`, balance + amount);
         return Promise.resolve(balance + amount);
@@ -136,6 +138,7 @@ async function deposit(userId, amount) {
 
 async function withdraw(userId, amount) {
     try {
+        amount = isGoodAmount(amount) ? amount : 0;
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
         if (balance - amount < 0) {
@@ -144,6 +147,7 @@ async function withdraw(userId, amount) {
         bank.push(`/accounts/${userId}/balance`, balance - amount);
         return Promise.resolve(balance - amount);
     } catch (err) {
+        amount = isGoodAmount(amount) ? amount : 0;
         let balance = openAccount(userId).balance;
         bank.push(`/accounts/${userId}/balance`, balance - amount);
         return Promise.resolve(balance - amount);
@@ -152,6 +156,17 @@ async function withdraw(userId, amount) {
 
 async function pay(senderId, receiverId, amount) {
     let sender, receiver;
+    amount = isGoodAmount(amount) ? amount : 0;
+
+    if (senderId === receiverId) {
+        return Promise.reject(`You cannot send ${formatCurrency(0)} to yourself :open_mouth::point_right:   :point_left::hushed:`);
+    }
+    if (amount < 0) {
+        return Promise.reject(`You cannot send negative ${formatCurrency(0)}`);
+    }
+    if (amount === 0) {
+        return Promise.reject(`You cannot send 0 ${formatCurrency(0)}`);
+    }
     try {
         sender = bank.getData(`/accounts/${senderId}`);
     } catch (err) {
@@ -162,14 +177,6 @@ async function pay(senderId, receiverId, amount) {
         receiver = bank.getData(`/accounts/${receiverId}`);
     } catch (err) {
         receiver = openAccount(receiverId);
-    }
-
-    if (senderId === receiverId) {
-        return Promise.reject(`You cannot send ${formatCurrency(0)} to yourself :open_mouth::point_right:   :point_left::hushed:`);
-    }
-
-    if (amount < 0) {
-        return Promise.reject(`You cannot send negative ${formatCurrency(0)}`);
     }
     try {
         await withdraw(senderId, amount);

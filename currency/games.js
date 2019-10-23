@@ -37,10 +37,10 @@ var GAMES = {
     async playRoulette(userId, amount, args) {
         let userBalance = BANK.getRawBalance(userId);
         if (amount === 0) {
-            return Promise.reject(`You cannot spend 0`);
+            return Promise.reject(`You need to bet at least 1 ${formatCurrency(1)}`);
         }
         if (amount > userBalance) {
-            return Promise.reject(`You cannot spend more than you have.`);
+            return Promise.reject(`You cannot bet more than you have in your account.`);
         }
         BANK.withdrawFromUser(userId, parseInt(amount));
 

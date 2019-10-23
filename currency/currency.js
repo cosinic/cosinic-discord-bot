@@ -81,6 +81,9 @@ var CURRENCY_COMMANDS = {
             HELP_COMMANDS.help("cc", received);
         }
     },
+    getRawBalance(userId) {
+        return getBalance(userId);
+    },
     depositToUser(userId, amount) {
         return deposit(userId, amount);
     },

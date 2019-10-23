@@ -10,7 +10,7 @@ var GAMES = {
             return;
         }
         let game = args[0];
-        let amount = args[1];
+        let amount = isGoodAmount(args[1]) ? args[1] : 0;
         args = args.slice(2);
         let userId = received.author.id;
         if (args) {
@@ -35,6 +35,15 @@ var GAMES = {
         }
     },
     async playRoulette(userId, amount, args) {
+        let userBalance = BANK.getRawBalance(userId);
+        if (amount === 0) {
+            return Promise.reject(`You cannot spend 0`);
+        }
+        if (amount > userBalance) {
+            return Promise.reject(`You cannot spend more than you have.`);
+        }
+        BANK.withdrawFromUser(userId, parseInt(amount));
+
         return await ROULETTE.bet(args)
             .then(result => {
                 if (result.win) {
@@ -43,7 +52,6 @@ var GAMES = {
                     BANK.depositToUser(userId, payout);
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
                 } else {
-                    BANK.withdrawFromUser(userId, parseInt(amount));
                     BANK.depositToBot(parseInt(amount));
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_with_wings: Better luck next time, <@${userId}>.`);
                 }
@@ -51,6 +59,10 @@ var GAMES = {
                 return Promise.reject(err);
             })
     }
+}
+
+function isGoodAmount(amount) {
+    return 0 === amount % (!isNaN(parseFloat(amount)) && 0 <= ~~amount);
 }
 
 function formatCurrency(amount) {

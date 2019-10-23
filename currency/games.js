@@ -42,18 +42,18 @@ var GAMES = {
         if (amount > userBalance) {
             return Promise.reject(`You cannot bet more than you have in your account.`);
         }
-        BANK.withdrawFromUser(userId, parseInt(amount));
+        BANK.withdrawFromUser(userId, sanitizeAmount(amount));
 
         return await ROULETTE.bet(args)
             .then(result => {
                 if (result.win) {
                     let multiplyer = result.multiplyer;
-                    let payout = sanitizeAmount(parseInt(amount) * multiplyer);
+                    let payout = sanitizeAmount(amount * multiplyer);
                     BANK.depositToUser(userId, payout);
                     BANK.depositToBot(sanitizeAmount(payout / 4)); // Give Bank outside 25% of earnings (for Dividends/Rewards Pool)
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${formatCurrency(payout)}`);
                 } else {
-                    BANK.depositToBot(parseInt(amount));
+                    BANK.depositToBot(sanitizeAmount(amount));
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_with_wings: Better luck next time, <@${userId}>.`);
                 }
             }).catch(err => {

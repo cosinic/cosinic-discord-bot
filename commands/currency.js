@@ -14,7 +14,7 @@ const CURRENCY = 'Cosinic Coin';
  * Bank Layout
  * {
  * * accounts {
- * * * userId (discord tag) {
+ * * * userId {
  * * * * balance
  * * *}
  * * }
@@ -115,7 +115,7 @@ async function pay(senderId, receiverId, amount) {
     }
 
     if (senderId === receiverId) {
-        return Promise.reject(`You cannot send money to yourself :open_mouth::point_right:    :point_left::hushed:`);
+        return Promise.reject(`You cannot send ${formatCurrency(0)} to yourself :open_mouth::point_right:   :point_left::hushed:`);
     }
 
     if (amount < 0) {

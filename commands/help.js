@@ -23,6 +23,7 @@ var HELP_COMMANDS = {
                 case 'cc':
                     help_text = "You can use this command like: `!cc [balance|pay] @TAG_A_USER [AMOUNT]`";
                     help_text += "\nE.G. `!cc pay @bob 5`";
+                    help_text += "\nNote: You can DM the Bot `!cc balance` if you'd like to know your balance in private.";
                     break;
                 default:
                     break;

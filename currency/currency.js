@@ -241,7 +241,7 @@ function checkEconomy() {
         let toDonate = [];
         for (let id in accounts) {
             if (id !== bot_id) {
-                if (accounts[id].balance < (avg / 2)) { // If the user's balance is below 25% of the average economy (avg = 50%, avg/2 = 25%)
+                if (accounts[id].balance < (avg / 2)) { // If the user's balance is below 50% of the average economy
                     toDonate.push(id); // Then put them on the donor list
                 }
             }

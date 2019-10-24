@@ -32,6 +32,10 @@ var CURRENCY_COMMANDS = {
         let userId = received.author.id;
         let username = received.author.username;
 
+        if (process.env.NODE_ENV === "DEVELOPMENT") {
+            received.channel.send(`NOTE: I'm currently running on development. Devs are testing, so anything you do right now will not be counted.`);
+        }
+
         switch (args[0]) {
             case "pay":
             case "send":
@@ -218,17 +222,51 @@ function formatCurrency(amount) {
 
 /**
  * 
- * Name courtesy from Sam (Skeltch)
+ * Name courtesy from Sam (Skeltch) & Andrew Yang
  * 
  */
 function freedomDividend(accounts) {
     let bank_balance = getBalance(client.user.id);
-    let distributionAmount = sanitizeAmount(bank_balance / 4); // 25% of bank goes to the people
+    let distributionAmount = sanitizeAmount(bank_balance * 0.3); // 30% of bank wealth gets distributed equally to everyone
+    withdraw(client.user.id, distributionAmount);
+    let dividends = sanitizeAmount(distributionAmount / accounts.length);
+
+    const delay = ms => {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
+
+    const delayMessage = (time, cb) => {
+        time = time || 300;
+        return delay(5000).then(() => {
+            cb();
+        });
+    }
+    const depositDividends = async _ => {
+        for (let index = 0; index < accounts.length; index++) {
+            deposit(accounts[index], dividends);
+
+            let delay = 300;
+            if ((index + 1 % 3) === 0) { // For Discord Chat Rate Limit
+                delay = 5000;
+            }
+            await delayMessage(delay, () => {
+                client.users.get(accounts[index]).send(`${EMOJI_MONEY} You have been given freedom dividends of ${dividends} ${formatCurrency(dividends)}!`);
+            });
+        }
+    }
+
+    depositDividends();
+
+}
+
+function economyStamps(accounts) {
+    let bank_balance = getBalance(client.user.id);
+    let distributionAmount = sanitizeAmount(bank_balance * 0.15); // 15% of bank goes to the poverty before freedom dividends
     withdraw(client.user.id, distributionAmount);
     let distributed_per_person = sanitizeAmount(distributionAmount / accounts.length);
     accounts.forEach(id => {
         deposit(id, distributed_per_person);
-        client.users.get(id).send(`${EMOJI_MONEY} You have been given freedom dividends of ${distributed_per_person} ${formatCurrency(distributed_per_person)}!`);
+        client.users.get(id).send(`${EMOJI_MONEY} You have been given economy stamps of ${distributed_per_person} ${formatCurrency(distributed_per_person)}!`);
     });
 }
 
@@ -258,16 +296,22 @@ function checkEconomy() {
         let avgEcon = getAverageEconomy();
 
         let toDonate = [];
+        let toDividends = [];
         for (let id in accounts) {
             if (id !== bot_id) {
                 if (accounts[id].balance < (avgEcon / 2)) { // If the user's balance is below 50% of the average economy
                     toDonate.push(id); // Then put them on the donor list
                 }
+                toDividends.push(id); // Freedom dividends for everyone
             }
         }
 
         if (toDonate.length) {
-            freedomDividend(toDonate);
+            economyStamps(toDonate);
+        }
+
+        if (toDividends.length) {
+            freedomDividend(toDividends);
         }
 
     } catch (error) {

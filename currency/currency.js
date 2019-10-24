@@ -60,7 +60,7 @@ var CURRENCY_COMMANDS = {
         received.channel.send(message);
     },
     displayAverageEconomy(received) {
-        let avgEcon = getAverageEconomy();
+        let avgEcon = sanitizeAmount(getAverageEconomy());
         let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${formatCurrency(avgEcon)}`;
         received.channel.send(message);
     },

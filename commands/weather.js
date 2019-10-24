@@ -4,6 +4,8 @@ var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
 var cron = require('node-cron');
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 const WEATHER_API = process.env.WEATHER_API;
 
 /* Weather Forecast DB Layout
@@ -94,6 +96,10 @@ var WEATHER_COMMANDS = {
                         let dayInfo = '';
                         for (let i = 0; i < 7; i++) {
                             let date = weather_data[i].valid_date;
+                            let datetime = new Date(date);
+                            let dateFormatted = getFormattedDate(datetime);
+                            let dayOfWeek = DAYS[datetime.getDay()];
+
                             let weather_id = weather_data[i].weather.code;
                             let description = weather_data[i].weather.description;
                             let temp = weather_data[i].temp;
@@ -108,7 +114,7 @@ var WEATHER_COMMANDS = {
                             let precip = weather_data[i].precip;
                             let snow = weather_data[i].snow;
 
-                            dayInfo += `\n-----------------\n**${date}:**\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+                            dayInfo += `\n-----------------\n**${dateFormatted}** (${dayOfWeek}):\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
                             if (precip > 0) {
                                 dayInfo += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
                             }
@@ -287,6 +293,15 @@ function getUnitAmount(unit) {
             break;
     }
     return amount;
+}
+
+// Formats to MM/DD/YYYY
+function getFormattedDate(date) {
+    let year = date.getFullYear();
+    let month = (1 + date.getMonth()).toString().padStart(2, '0');
+    let day = date.getDate().toString().padStart(2, '0');
+  
+    return month + '/' + day + '/' + year;
 }
 
 // https://www.weatherbit.io/api/codes

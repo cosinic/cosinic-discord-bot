@@ -13,6 +13,7 @@ var GAMES = {
         }
         let game = args[0];
         let amount = sanitizeAmount(args[1]);
+        let arg_one_raw = args[1];
         args = args.slice(2);
         let userId = received.author.id;
         if (args) {
@@ -20,7 +21,7 @@ var GAMES = {
                 case "bet":
                     break;
                 case "roulette":
-                    if (args[1] === "help") {
+                    if (arg_one_raw === "help") {
                         HELP_COMMANDS.helpGames("roulette", received);
                         return;
                     }

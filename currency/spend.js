@@ -13,7 +13,7 @@ var SPLURGE = {
         let type = args[0];
         let who = args[1];
         let userId = received.author.id;
-        if (!received.guild.available) {
+        if (!received.guild) {
             received.channel.send(`You can only bamboozle someone inside a server. DM's are not possible.`);
             return;
         }

@@ -22,7 +22,7 @@ var punishments = new JsonDB(new JsonDBConfig("db/punishments", true, false, '/'
 var PUNISHMENT_COMMANDS = {
     checkPunishments(received) {
         let userId = received.author.id;
-        if (!received.guild.available) { // Was not part of a server.
+        if (!received.guild) { // Was not part of a server.
             return;
         }
         let guildId = received.guild.id;

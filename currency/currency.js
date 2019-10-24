@@ -41,6 +41,9 @@ var CURRENCY_COMMANDS = {
             case "bank":
                 this.displayBalance(client.user.id, client.user.username, received);
                 return;
+            case "economy":
+                this.displayAverageEconomy(received);
+                return;
             case "balance":
                 this.displayBalance(userId, username, received);
                 return;
@@ -54,6 +57,11 @@ var CURRENCY_COMMANDS = {
     displayBalance(userId, username, received) {
         let balance = getBalance(userId);
         let message = `${EMOJI_MONEY} ${username} has ${balance} ${formatCurrency(balance)}`;
+        received.channel.send(message);
+    },
+    displayAverageEconomy(received) {
+        let avgEcon = getAverageEconomy();
+        let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${formatCurrency(avgEcon)}`;
         received.channel.send(message);
     },
     payUser(userId, username, args, received) {
@@ -195,7 +203,7 @@ async function pay(senderId, receiverId, amount) {
 }
 
 function sanitizeAmount(amount) {
-    if(amount > Number.MAX_SAFE_INTEGER){
+    if (amount > Number.MAX_SAFE_INTEGER) {
         return 0;
     }
     if ((amount % (!isNaN(parseFloat(amount))) >= 0) && 0 <= ~~amount) {
@@ -224,12 +232,11 @@ function freedomDividend(accounts) {
     });
 }
 
-function checkEconomy() {
+function getAverageEconomy() {
+    let bot_id = client.user.id;
     try {
-        let bot_id = client.user.id;
         let accounts = bank.getData('/accounts');
         let population = Object.keys(accounts).length;
-
         let avg = Object.keys(accounts).reduce((sum, id) => {
             if (id === bot_id) { // Don't count the bot balance
                 population--;
@@ -238,11 +245,22 @@ function checkEconomy() {
                 return sum + accounts[id].balance
             }
         }, 0) / population;
+        return avg;
+    } catch (err) {
+        return 0;
+    }
+}
+
+function checkEconomy() {
+    try {
+        let bot_id = client.user.id;
+        let accounts = bank.getData('/accounts');
+        let avgEcon = getAverageEconomy();
 
         let toDonate = [];
         for (let id in accounts) {
             if (id !== bot_id) {
-                if (accounts[id].balance < (avg / 2)) { // If the user's balance is below 50% of the average economy
+                if (accounts[id].balance < (avgEcon / 2)) { // If the user's balance is below 50% of the average economy
                     toDonate.push(id); // Then put them on the donor list
                 }
             }

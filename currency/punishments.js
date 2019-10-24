@@ -43,11 +43,18 @@ var PUNISHMENT_COMMANDS = {
 
     },
     addPunishment(toPunishId, guildId, type) {
-        addPunishment(toPunishId, guildId, type);
+        return addPunishment(toPunishId, guildId, type);
     }
 }
 
-const BAMBOOZLE_WORDS = ["By the way, I'm a complete dumbass", "Also, I realized I suck at everything!", "Wow I'm an idiot sandwich.", "I have a really small PP.", "I support Trump and his actions!"];
+const BAMBOOZLE_WORDS = ["By the way, I'm a complete dumbass", 
+"Also, I suck at everything", 
+"I'm an idiot sandwich", 
+"I have a really small PP", 
+"I support Trump and his actions",
+"I like spoons",
+"Sometimes I like to sniff glue",
+];
 
 var runPunishments = {
     bamboozle: function (received) {
@@ -57,11 +64,11 @@ var runPunishments = {
             return BAMBOOZLE_WORDS[Math.floor(Math.random() * BAMBOOZLE_WORDS.length)];
         }
 
-        let newMessage = originalMessage + '\n' + getBamboozle();
+        let newMessage = originalMessage + (originalMessage[originalMessage.length - 1] !== '.' ? '. ' : ' ') + getBamboozle();
         if (received.deletable) {
             received.delete()
                 .then(msg => {
-                    received.channel.send(`<@${received.author.id}> said:\n>>> ${newMessage}`);
+                    received.channel.send(`<@${received.author.id}> says: ${newMessage}`);
                 })
                 .catch(console.error);
             return true;

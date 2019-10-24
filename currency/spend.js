@@ -49,7 +49,7 @@ var SPLURGE = {
             return BANK.withdrawFromUser(userId, CONSTANTS.INVENTORY.bamboozle)
                 .then(x => {
                     BANK.depositToBot(CONSTANTS.INVENTORY.bamboozle); // Money goes to bank
-                    let bbzlAmount = PUNISHMENTS.addPunishment(userId, guildId, "bamboozle");
+                    let bbzlAmount = PUNISHMENTS.addPunishment(bamboozleId, guildId, "bamboozle");
                     return Promise.resolve(`:smiling_imp: <@${bamboozleId}> is now being bamboozled for ${bbzlAmount} messages.`);
                 }).catch(err => {
                     return Promise.reject(`Not enough money in your account.\nIt CONSTANTS.INVENTORY ${CONSTANTS.INVENTORY["bamboozle"]} ${CONSTANTS.formatCurrency(CONSTANTS.INVENTORY["bamboozle"])} to bamboozle someone.`);

@@ -1,3 +1,5 @@
+const CONSTANTS = require('../currency/constants');
+
 var HELP_COMMANDS = {
     help(args, received) {
         if (args.length > 0) {
@@ -59,13 +61,14 @@ var HELP_COMMANDS = {
             let help_text = '';
             switch (args) {
                 case 'spend':
-                    help_text = `You can spend coins by typing \`!cc [BOT_INVENTORY] [PARAMETERS]\``;
+                    help_text = `You can spend ${CONSTANTS.formatCurrency(0)} by typing \`!cc [BOT_INVENTORY] [PARAMETERS]\``;
                     help_text += "\nCurrent Inventory:";
                     help_text += "\nBamboozle (Type `!cc bamboozle help` for more info)";
                     break;
                 case 'bamboozle':
                     help_text = `You can bamboozle someone by typing \`!cc bamboozle @TAG_A_USER\`.`;
                     help_text += ` Their messages will be replaced with a good ol bamboozle.`;
+                    help_text += `\nIt costs ${CONSTANTS.INVENTORY.bamboozle} ${CONSTANTS.formatCurrency(CONSTANTS.INVENTORY.bamboozle)} to bamboozle someone.`;
                     break;
                 default:
                     help_text = "I'm not sure what you need help with. Try `![topic] help`";

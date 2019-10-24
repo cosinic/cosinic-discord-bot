@@ -22,6 +22,9 @@ var punishments = new JsonDB(new JsonDBConfig("db/punishments", true, false, '/'
 var PUNISHMENT_COMMANDS = {
     checkPunishments(received) {
         let userId = received.author.id;
+        if (!received.guild.available) { // Was not part of a server.
+            return;
+        }
         let guildId = received.guild.id;
 
         if (userId === client.user.id || received.author.bot) { //Can't punish bots
@@ -47,13 +50,13 @@ var PUNISHMENT_COMMANDS = {
     }
 }
 
-const BAMBOOZLE_WORDS = ["By the way, I'm a complete dumbass", 
-"Also, I suck at everything", 
-"I'm an idiot sandwich", 
-"I have a really small PP", 
-"I support Trump and his actions",
-"I like spoons",
-"Sometimes I like to sniff glue",
+const BAMBOOZLE_WORDS = ["By the way, I'm a complete dumbass",
+    "Also, I suck at everything",
+    "I'm an idiot sandwich",
+    "I have a really small PP",
+    "I support Trump and his actions",
+    "I like spoons",
+    "Sometimes I like to sniff glue",
 ];
 
 var runPunishments = {

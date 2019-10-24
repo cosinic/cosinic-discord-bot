@@ -128,13 +128,13 @@ async function deposit(userId, amount) {
         amount = sanitizeAmount(amount);
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
-        bank.push(`/accounts/${userId}/balance`, balance + amount);
-        return Promise.resolve(balance + amount);
+        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance + amount));
+        return Promise.resolve(sanitizeAmount(balance + amount));
     } catch (err) {
         amount = sanitizeAmount(amount);
         let balance = openAccount(userId).balance;
-        bank.push(`/accounts/${userId}/balance`, balance + amount);
-        return Promise.resolve(balance + amount);
+        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance + amount));
+        return Promise.resolve(sanitizeAmount(balance + amount));
     }
 }
 
@@ -146,13 +146,13 @@ async function withdraw(userId, amount) {
         if (balance - amount < 0) {
             return Promise.reject('Not enough balance in account');
         }
-        bank.push(`/accounts/${userId}/balance`, balance - amount);
-        return Promise.resolve(balance - amount);
+        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance - amount));
+        return Promise.resolve(sanitizeAmount(balance - amount));
     } catch (err) {
         amount = sanitizeAmount(amount);
         let balance = openAccount(userId).balance;
-        bank.push(`/accounts/${userId}/balance`, balance - amount);
-        return Promise.resolve(balance - amount);
+        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance - amount));
+        return Promise.resolve(sanitizeAmount(balance - amount));
     }
 }
 

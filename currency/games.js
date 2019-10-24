@@ -60,6 +60,7 @@ var GAMES = {
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_with_wings: Better luck next time, <@${userId}>.`);
                 }
             }).catch(err => {
+                BANK.depositToUser(userId, sanitizeAmount(amount)); // Return money to user
                 return Promise.reject(err);
             })
     }

@@ -53,6 +53,28 @@ var HELP_COMMANDS = {
         } else {
             received.channel.send("I'm not sure what you need help with. Try `![topic] help`")
         }
+    },
+    helpSpend(args, received) {
+        if (args.length > 0) {
+            let help_text = '';
+            switch (args) {
+                case 'spend':
+                    help_text = `You can spend coins by typing \`!cc [BOT_INVENTORY] [PARAMETERS]\``;
+                    help_text += "\nCurrent Inventory:";
+                    help_text += "\nBamboozle (Type `!cc bamboozle help` for more info)";
+                    break;
+                case 'bamboozle':
+                    help_text = `You can bamboozle someone by typing \`!cc bamboozle @TAG_A_USER\`.`;
+                    help_text += ` Their messages will be replaced with a good ol bamboozle.`;
+                    break;
+                default:
+                    help_text = "I'm not sure what you need help with. Try `![topic] help`";
+                    break;
+            }
+            received.channel.send(help_text);
+        } else {
+            received.channel.send("I'm not sure what you need help with. Try `![topic] help`")
+        }
     }
 }
 

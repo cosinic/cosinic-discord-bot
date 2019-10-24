@@ -1,0 +1,130 @@
+require('dotenv').config();
+var JsonDB = require('node-json-db').JsonDB;
+var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
+
+var punishments = new JsonDB(new JsonDBConfig("db/punishments", true, false, '/'));
+
+/**
+ * Punishment Layout
+ * {
+ * * punish {
+ * * * userId {
+ * * * * PUNISHMENT_TYPE {
+ * * * * * guildId
+ * * * * * amount
+ * * * * }
+ * * *}
+ * * }
+ * }
+ */
+
+var PUNISHMENT_COMMANDS = {
+    checkPunishments(received) {
+        let userId = received.author.id;
+        let guildId = received.guild.id;
+
+        if (userId === client.user.id || received.author.bot) { //Can't punish bots
+            return;
+        }
+
+        try {
+            let userPunishments = punishments.getData(`/punish/${userId}`);
+            Object.keys(userPunishments).forEach(punishment => {
+                if (userPunishments[punishment].guildId === guildId && userPunishments[punishment].amount > 0) {
+                    if (runPunishments[punishment](received)) {
+                        subtractPunishment(userId, punishment);
+                    }
+                }
+            });
+        } catch (err) {
+            // No punishment for this user
+        }
+
+    },
+    addPunishment(toPunishId, guildId, type) {
+        addPunishment(toPunishId, guildId, type);
+    }
+}
+
+const BAMBOOZLE_WORDS = ["By the way, I'm a complete dumbass", "Also, I realized I suck at everything!", "Wow I'm an idiot sandwich.", "I have a really small PP.", "I support Trump and his actions!"];
+
+var runPunishments = {
+    bamboozle: function (received) {
+        let originalMessage = received.content;
+
+        let getBamboozle = () => {
+            return BAMBOOZLE_WORDS[Math.floor(Math.random() * BAMBOOZLE_WORDS.length)];
+        }
+
+        let newMessage = originalMessage + '\n' + getBamboozle();
+        if (received.deletable) {
+            received.delete()
+                .then(msg => {
+                    received.channel.send(`<@${received.author.id}> said:\n>>> ${newMessage}`);
+                })
+                .catch(console.error);
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+const PUNISH_COUNTS = {
+    "bamboozle": 5
+}
+
+function addPunishment(userId, guildId, type) {
+    try { //Increase interval if they are already being punished
+        let userPunishment = punishments.getData(`/punish/${userId}/${type}`);
+        let newAmount = sanitizeAmount(userPunishment.amount + PUNISH_COUNTS[type]);
+        punishments.push(`/punish/${userId}/${type}/amount`, newAmount);
+        return newAmount;
+    } catch (err) { //Has no punishment so create for them
+        punishments.push(`/punish/${userId}/${type}`, {
+            amount: PUNISH_COUNTS[type],
+            guildId: guildId
+        });
+        return PUNISH_COUNTS[type];
+    }
+}
+
+function subtractPunishment(userId, type) {
+    try {
+        let userPunishment = punishments.getData(`/punish/${userId}/${type}`);
+        let newAmount = sanitizeAmount(userPunishment.amount - 1);
+        punishments.push(`/punish/${userId}/${type}/amount`, newAmount);
+        if (newAmount <= 0) {
+            deletePunishment(userId, type);
+        }
+    } catch (err) {
+        // Not found
+    }
+}
+
+function deletePunishment(userId, type) {
+    try {
+        let userPunishment = punishments.getData(`/punish/${userId}/${type}`);
+        if (userPunishment.amount <= 0) { // If their amount of punishments is 0, remove that punishment
+            punishments.delete(`/punish/${userId}/${type}`);
+        }
+        let otherPunishments = punishments.getData(`/punish/${userId}`);
+        if (Object.keys(otherPunishments).length === 0) { // No other punishments found, so remove user from punishment db
+            punishments.delete(`/punish/${userId}`);
+        }
+    } catch (err) {
+        // Not found
+    }
+}
+
+function sanitizeAmount(amount) {
+    if (amount > Number.MAX_SAFE_INTEGER) {
+        return 0;
+    }
+    if ((amount % (!isNaN(parseFloat(amount))) >= 0) && 0 <= ~~amount) {
+        return Math.round(amount * 100) / 100;
+    }
+    return 0;
+}
+
+module.exports = PUNISHMENT_COMMANDS;

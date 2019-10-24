@@ -41,21 +41,27 @@ var CURRENCY_COMMANDS = {
             case "send":
                 this.payUser(userId, username, args.slice(1), received);
                 return;
+
             case "botbalance":
             case "bank":
                 this.displayBalance(client.user.id, client.user.username, received);
                 return;
+
             case "economy":
                 this.displayAverageEconomy(received);
                 return;
+
             case "balance":
                 this.displayBalance(userId, username, received);
                 return;
-            case "steal":
-                return;
+
             case "roulette":
             case "games":
                 CURRENCY_GAMES.handleCommand(args, received);
+                return;
+
+            case "bamboozle":
+                CURRENCY_SPLURGE.handleCommand(args, received);
                 return;
         }
     },
@@ -329,3 +335,4 @@ cron.schedule('0 * * * *', () => {
 
 module.exports = CURRENCY_COMMANDS;
 var CURRENCY_GAMES = require('./games.js');
+var CURRENCY_SPLURGE = require('./spend.js');

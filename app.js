@@ -14,6 +14,8 @@ client.on('ready', () => {
     });
 });
 
+const punishments = require('./currency/punishments.js');
+
 client.on('message', (receivedMessage) => {
     if (receivedMessage.author == client.user) { // Prevent bot from responding to its own messages
         return
@@ -25,6 +27,8 @@ client.on('message', (receivedMessage) => {
 
     if (receivedMessage.content.startsWith("!")) {
         processCommand(receivedMessage);
+    } else {
+        punishments.checkPunishments(receivedMessage);
     }
 });
 

@@ -222,7 +222,7 @@ async function pay(senderId, receiverId, amount) {
  */
 function freedomDividend(accounts) {
     let bank_balance = getBalance(client.user.id);
-    let distributionAmount = CONSTANTS.sanitizeAmount(bank_balance * 0.3); // 30% of bank wealth gets distributed equally to everyone
+    let distributionAmount = CONSTANTS.sanitizeAmount(bank_balance * CONSTANTS.CURRENCY.DIVIDEND_RATE);
     withdraw(client.user.id, distributionAmount);
     let dividends = CONSTANTS.sanitizeAmount(distributionAmount / accounts.length);
 
@@ -256,7 +256,7 @@ function freedomDividend(accounts) {
 
 function economyStamps(accounts) {
     let bank_balance = getBalance(client.user.id);
-    let distributionAmount = CONSTANTS.sanitizeAmount(bank_balance * 0.15); // 15% of bank goes to the poverty before freedom dividends
+    let distributionAmount = CONSTANTS.sanitizeAmount(bank_balance * CONSTANTS.CURRENCY.POVERTY_RATE);
     withdraw(client.user.id, distributionAmount);
     let distributed_per_person = CONSTANTS.sanitizeAmount(distributionAmount / accounts.length);
     accounts.forEach(id => {

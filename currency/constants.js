@@ -2,10 +2,12 @@ const CURRENCY = "Cosinic Coin";
 
 const CONSTANTS = {
     "CURRENCY": {
-        "TAX_RATE": .15,
+        "TAX_RATE": 0.15,
+        "DIVIDEND_RATE": 0.3, // 30% of bank wealth gets distributed equally to everyone
+        "POVERTY_RATE": 0.15 // 15% of bank goes to the poverty before freedom dividends
     },
     "INVENTORY": {
-        "bamboozle": 1500
+        "bamboozle": 1000
     },
     "PUNISH_COUNTS": {
         "bamboozle": 5

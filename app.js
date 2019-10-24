@@ -55,12 +55,15 @@ function processCommand(receivedMessage) {
             riot_commands.sucks(arguments, receivedMessage);
             break;
         case 'stock':
+        case 'stocks':
             stock_commands.handleCommand(arguments, receivedMessage);
             break;
         case 'stonk':
+        case 'stonks':
             stock_commands.getStonk(arguments, receivedMessage);
             break;
         case 'reddit':
+        case 'redsched':
             reddit_commands.handleCommand(arguments, receivedMessage);
             break;
         case 'weather':

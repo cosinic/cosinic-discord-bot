@@ -56,7 +56,7 @@ var SPLURGE = {
                     let bbzlAmount = PUNISHMENTS.addPunishment(bamboozleId, guildId, "bamboozle");
                     return Promise.resolve(`:smiling_imp: <@${bamboozleId}> is now being bamboozled for ${bbzlAmount} messages.`);
                 }).catch(err => {
-                    return Promise.reject(`Not enough money in your account.\nIt CONSTANTS.INVENTORY ${CONSTANTS.INVENTORY["bamboozle"]} ${CONSTANTS.formatCurrency(CONSTANTS.INVENTORY["bamboozle"])} to bamboozle someone.`);
+                    return Promise.reject(`Not enough money in your account.\nIt costs ${CONSTANTS.INVENTORY["bamboozle"]} ${CONSTANTS.formatCurrency(CONSTANTS.INVENTORY["bamboozle"])} to bamboozle someone.`);
                 });
         }
     }

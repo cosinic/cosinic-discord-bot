@@ -249,9 +249,9 @@ function freedomDividend(accounts) {
             if ((index + 1 % 3) === 0) { // For Discord Chat Rate Limit
                 delay = 5000;
             }
-            await delayMessage(delay, () => {
-                client.users.get(accounts[index]).send(`${EMOJI_MONEY} You have been given freedom dividends of ${dividends} ${formatCurrency(dividends)}!`);
-            });
+            // await delayMessage(delay, () => {
+            //     client.users.get(accounts[index]).send(`${EMOJI_MONEY} You have been given freedom dividends of ${dividends} ${formatCurrency(dividends)}!`);
+            // });
         }
     }
 

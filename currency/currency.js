@@ -62,6 +62,7 @@ var CURRENCY_COMMANDS = {
                 return;
 
             case "bamboozle":
+            case "spend":
                 CURRENCY_SPLURGE.handleCommand(args, received);
                 return;
         }

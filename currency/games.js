@@ -40,7 +40,7 @@ var GAMES = {
     async playRoulette(userId, amount, args) {
         let userBalance = BANK.getRawBalance(userId);
         if (amount === 0) {
-            return Promise.reject(`You need to bet at least 1 ${formatCurrency(1)}`);
+            return Promise.reject(`You need to bet at least .01 ${formatCurrency(1)}`);
         }
         if (amount > userBalance) {
             return Promise.reject(`You cannot bet more than you have in your account.`);

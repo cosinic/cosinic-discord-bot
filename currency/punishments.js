@@ -1,6 +1,7 @@
 require('dotenv').config();
 var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
+const CONSTANTS = require('./constants');
 
 var punishments = new JsonDB(new JsonDBConfig("db/punishments", true, false, '/'));
 
@@ -70,29 +71,25 @@ var runPunishments = {
     }
 }
 
-const PUNISH_COUNTS = {
-    "bamboozle": 5
-}
-
 function addPunishment(userId, guildId, type) {
     try { //Increase interval if they are already being punished
         let userPunishment = punishments.getData(`/punish/${userId}/${type}`);
-        let newAmount = sanitizeAmount(userPunishment.amount + PUNISH_COUNTS[type]);
+        let newAmount = CONSTANTS.sanitizeAmount(userPunishment.amount + CONSTANTS.PUNISH_COUNTS[type]);
         punishments.push(`/punish/${userId}/${type}/amount`, newAmount);
         return newAmount;
     } catch (err) { //Has no punishment so create for them
         punishments.push(`/punish/${userId}/${type}`, {
-            amount: PUNISH_COUNTS[type],
+            amount: CONSTANTS.PUNISH_COUNTS[type],
             guildId: guildId
         });
-        return PUNISH_COUNTS[type];
+        return CONSTANTS.PUNISH_COUNTS[type];
     }
 }
 
 function subtractPunishment(userId, type) {
     try {
         let userPunishment = punishments.getData(`/punish/${userId}/${type}`);
-        let newAmount = sanitizeAmount(userPunishment.amount - 1);
+        let newAmount = CONSTANTS.sanitizeAmount(userPunishment.amount - 1);
         punishments.push(`/punish/${userId}/${type}/amount`, newAmount);
         if (newAmount <= 0) {
             deletePunishment(userId, type);
@@ -115,16 +112,6 @@ function deletePunishment(userId, type) {
     } catch (err) {
         // Not found
     }
-}
-
-function sanitizeAmount(amount) {
-    if (amount > Number.MAX_SAFE_INTEGER) {
-        return 0;
-    }
-    if ((amount % (!isNaN(parseFloat(amount))) >= 0) && 0 <= ~~amount) {
-        return Math.round(amount * 100) / 100;
-    }
-    return 0;
 }
 
 module.exports = PUNISHMENT_COMMANDS;

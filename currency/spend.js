@@ -1,11 +1,7 @@
 const BANK = require('./currency.js');
 const PUNISHMENTS = require('./punishments');
-const CURRENCY = 'Cosinic Coin';
 
-const TAX_RATE = .15;
-const COSTS = {
-    "bamboozle": 1500
-}
+const CONSTANTS = require('./constants');
 
 var SPLURGE = {
     //!cc bamboozle @user
@@ -50,31 +46,16 @@ var SPLURGE = {
                 return Promise.reject(`Nice try but you can't bamboozle me.`);
             }
 
-            return BANK.withdrawFromUser(userId, COSTS.bamboozle)
+            return BANK.withdrawFromUser(userId, CONSTANTS.INVENTORY.bamboozle)
                 .then(x => {
-                    BANK.depositToBot(COSTS.bamboozle); // Money goes to bank
+                    BANK.depositToBot(CONSTANTS.INVENTORY.bamboozle); // Money goes to bank
                     let bbzlAmount = PUNISHMENTS.addPunishment(userId, guildId, "bamboozle");
                     return Promise.resolve(`:smiling_imp: <@${bamboozleId}> is now being bamboozled for ${bbzlAmount} messages.`);
                 }).catch(err => {
-                    return Promise.reject(`Not enough money in your account.\nIt costs ${COSTS["bamboozle"]} ${formatCurrency(COSTS["bamboozle"])} to bamboozle someone.`);
+                    return Promise.reject(`Not enough money in your account.\nIt CONSTANTS.INVENTORY ${CONSTANTS.INVENTORY["bamboozle"]} ${CONSTANTS.formatCurrency(CONSTANTS.INVENTORY["bamboozle"])} to bamboozle someone.`);
                 });
         }
     }
-}
-
-function sanitizeAmount(amount) {
-    if (amount > Number.MAX_SAFE_INTEGER) {
-        return 0;
-    }
-    if ((amount % (!isNaN(parseFloat(amount))) >= 0) && 0 <= ~~amount) {
-        return Math.round(amount * 100) / 100;
-    }
-    return 0;
-}
-
-
-function formatCurrency(amount) {
-    return `${CURRENCY}${amount !== 1 ? "s" : ""}`;
 }
 
 module.exports = SPLURGE;

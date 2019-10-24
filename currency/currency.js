@@ -9,7 +9,8 @@ const EMOJI_MONEY = ':moneybag:';
 const EMOJI_MONEY_MOUTH = ':money_mouth:';
 const EMOJI_MONEY_WINGS = ':money_with_wings:';
 const EMOJI_DOLLAR = ':euro:';
-const CURRENCY = 'Cosinic Coin';
+
+const CONSTANTS = require('./constants');
 
 /**
  * Bank Layout
@@ -67,12 +68,12 @@ var CURRENCY_COMMANDS = {
     },
     displayBalance(userId, username, received) {
         let balance = getBalance(userId);
-        let message = `${EMOJI_MONEY} ${username} has ${balance} ${formatCurrency(balance)}`;
+        let message = `${EMOJI_MONEY} ${username} has ${balance} ${CONSTANTS.formatCurrency(balance)}`;
         received.channel.send(message);
     },
     displayAverageEconomy(received) {
-        let avgEcon = sanitizeAmount(getAverageEconomy());
-        let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${formatCurrency(avgEcon)}`;
+        let avgEcon = CONSTANTS.sanitizeAmount(getAverageEconomy());
+        let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${CONSTANTS.formatCurrency(avgEcon)}`;
         received.channel.send(message);
     },
     payUser(userId, username, args, received) {
@@ -88,11 +89,11 @@ var CURRENCY_COMMANDS = {
             }
 
             let amount = Math.round(args[1] * 100) / 100;
-            amount = sanitizeAmount(amount);
+            amount = CONSTANTS.sanitizeAmount(amount);
             pay(userId, receiverId, amount)
                 .then(data => {
-                    let message = `${EMOJI_MONEY}  ${username}  ${EMOJI_DOLLAR}:arrow_right:  <@${receiverId}> ${EMOJI_MONEY_WINGS} ${data.amount} ${formatCurrency(data.amount)}`;
-                    //message += `\n        New balance: ${data.senderBalance} ${formatCurrency(data.senderBalance)}`;
+                    let message = `${EMOJI_MONEY}  ${username}  ${EMOJI_DOLLAR}:arrow_right:  <@${receiverId}> ${EMOJI_MONEY_WINGS} ${data.amount} ${CONSTANTS.formatCurrency(data.amount)}`;
+                    //message += `\n        New balance: ${data.senderBalance} ${CONSTANTS.formatCurrency(data.senderBalance)}`;
                     received.channel.send(message);
                 })
                 .catch(error => {
@@ -107,15 +108,15 @@ var CURRENCY_COMMANDS = {
         return getBalance(userId);
     },
     depositToUser(userId, amount) {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         return deposit(userId, amount);
     },
     withdrawFromUser(userId, amount) {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         return withdraw(userId, amount);
     },
     depositToBot(amount) {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         return deposit(client.user.id, amount);
     }
 }
@@ -144,49 +145,49 @@ function getBalance(userId) {
 
 async function deposit(userId, amount) {
     try {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
-        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance + amount));
-        return Promise.resolve(sanitizeAmount(balance + amount));
+        bank.push(`/accounts/${userId}/balance`, CONSTANTS.sanitizeAmount(balance + amount));
+        return Promise.resolve(CONSTANTS.sanitizeAmount(balance + amount));
     } catch (err) {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         let balance = openAccount(userId).balance;
-        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance + amount));
-        return Promise.resolve(sanitizeAmount(balance + amount));
+        bank.push(`/accounts/${userId}/balance`, CONSTANTS.sanitizeAmount(balance + amount));
+        return Promise.resolve(CONSTANTS.sanitizeAmount(balance + amount));
     }
 }
 
 async function withdraw(userId, amount) {
     try {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         let user = bank.getData(`/accounts/${userId}`);
         let balance = user.balance;
         if (balance - amount < 0) {
             return Promise.reject('Not enough balance in account');
         }
-        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance - amount));
-        return Promise.resolve(sanitizeAmount(balance - amount));
+        bank.push(`/accounts/${userId}/balance`, CONSTANTS.sanitizeAmount(balance - amount));
+        return Promise.resolve(CONSTANTS.sanitizeAmount(balance - amount));
     } catch (err) {
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
         let balance = openAccount(userId).balance;
-        bank.push(`/accounts/${userId}/balance`, sanitizeAmount(balance - amount));
-        return Promise.resolve(sanitizeAmount(balance - amount));
+        bank.push(`/accounts/${userId}/balance`, CONSTANTS.sanitizeAmount(balance - amount));
+        return Promise.resolve(CONSTANTS.sanitizeAmount(balance - amount));
     }
 }
 
 async function pay(senderId, receiverId, amount) {
     let sender, receiver;
-    amount = sanitizeAmount(amount);
+    amount = CONSTANTS.sanitizeAmount(amount);
 
     if (senderId === receiverId) {
-        return Promise.reject(`You cannot send ${formatCurrency(0)} to yourself :open_mouth::point_right:   :point_left::hushed:`);
+        return Promise.reject(`You cannot send ${CONSTANTS.formatCurrency(0)} to yourself :open_mouth::point_right:   :point_left::hushed:`);
     }
     if (amount < 0) {
-        return Promise.reject(`You cannot send negative ${formatCurrency(0)}`);
+        return Promise.reject(`You cannot send negative ${CONSTANTS.formatCurrency(0)}`);
     }
     if (amount === 0) {
-        return Promise.reject(`You cannot send 0 ${formatCurrency(0)}`);
+        return Promise.reject(`You cannot send 0 ${CONSTANTS.formatCurrency(0)}`);
     }
     try {
         sender = bank.getData(`/accounts/${senderId}`);
@@ -209,22 +210,8 @@ async function pay(senderId, receiverId, amount) {
         });
     } catch (err) {
         let balance = sender.balance;
-        return Promise.reject(`${EMOJI_MONEY_MOUTH} You don't have enough in your account to send ${amount} ${formatCurrency(amount)}`);
+        return Promise.reject(`${EMOJI_MONEY_MOUTH} You don't have enough in your account to send ${amount} ${CONSTANTS.formatCurrency(amount)}`);
     }
-}
-
-function sanitizeAmount(amount) {
-    if (amount > Number.MAX_SAFE_INTEGER) {
-        return 0;
-    }
-    if ((amount % (!isNaN(parseFloat(amount))) >= 0) && 0 <= ~~amount) {
-        return Math.round(amount * 100) / 100;
-    }
-    return 0;
-}
-
-function formatCurrency(amount) {
-    return `${CURRENCY}${amount !== 1 ? "s" : ""}`;
 }
 
 /**
@@ -234,9 +221,9 @@ function formatCurrency(amount) {
  */
 function freedomDividend(accounts) {
     let bank_balance = getBalance(client.user.id);
-    let distributionAmount = sanitizeAmount(bank_balance * 0.3); // 30% of bank wealth gets distributed equally to everyone
+    let distributionAmount = CONSTANTS.sanitizeAmount(bank_balance * 0.3); // 30% of bank wealth gets distributed equally to everyone
     withdraw(client.user.id, distributionAmount);
-    let dividends = sanitizeAmount(distributionAmount / accounts.length);
+    let dividends = CONSTANTS.sanitizeAmount(distributionAmount / accounts.length);
 
     const delay = ms => {
         return new Promise(resolve => setTimeout(resolve, ms))
@@ -257,7 +244,7 @@ function freedomDividend(accounts) {
                 delay = 5000;
             }
             // await delayMessage(delay, () => {
-            //     client.users.get(accounts[index]).send(`${EMOJI_MONEY} You have been given freedom dividends of ${dividends} ${formatCurrency(dividends)}!`);
+            //     client.users.get(accounts[index]).send(`${EMOJI_MONEY} You have been given freedom dividends of ${dividends} ${CONSTANTS.formatCurrency(dividends)}!`);
             // });
         }
     }
@@ -268,12 +255,12 @@ function freedomDividend(accounts) {
 
 function economyStamps(accounts) {
     let bank_balance = getBalance(client.user.id);
-    let distributionAmount = sanitizeAmount(bank_balance * 0.15); // 15% of bank goes to the poverty before freedom dividends
+    let distributionAmount = CONSTANTS.sanitizeAmount(bank_balance * 0.15); // 15% of bank goes to the poverty before freedom dividends
     withdraw(client.user.id, distributionAmount);
-    let distributed_per_person = sanitizeAmount(distributionAmount / accounts.length);
+    let distributed_per_person = CONSTANTS.sanitizeAmount(distributionAmount / accounts.length);
     accounts.forEach(id => {
         deposit(id, distributed_per_person);
-        client.users.get(id).send(`${EMOJI_MONEY} You have been given economy stamps of ${distributed_per_person} ${formatCurrency(distributed_per_person)}!`);
+        client.users.get(id).send(`${EMOJI_MONEY} You have been given economy stamps of ${distributed_per_person} ${CONSTANTS.formatCurrency(distributed_per_person)}!`);
     });
 }
 

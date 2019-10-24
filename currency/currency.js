@@ -54,6 +54,7 @@ var CURRENCY_COMMANDS = {
             case "steal":
                 return;
             case "roulette":
+            case "games":
                 CURRENCY_GAMES.handleCommand(args, received);
                 return;
         }

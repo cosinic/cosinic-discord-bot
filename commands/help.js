@@ -21,7 +21,7 @@ var HELP_COMMANDS = {
                     help_text = "You can use this command like: `!d [NUMBER]` or `!d[1-999]` or `!d [MIN] [MAX]`";
                     break;
                 case 'cc':
-                    help_text = "You can use this command like: `!cc [balance|pay] @TAG_A_USER [AMOUNT]`";
+                    help_text = "You can use this command like: `!cc [balance|pay|games] @TAG_A_USER [AMOUNT]`";
                     help_text += "\nE.G. `!cc pay @bob 5`";
                     help_text += "\nNote: You can DM the Bot `!cc balance` if you'd like to know your balance in private.";
                     break;
@@ -39,7 +39,7 @@ var HELP_COMMANDS = {
             switch (args) {
                 case 'games':
                     help_text = `You can play games by typing \`!cc [GAME] [GAME_OPTIONS]\``;
-                    help_text += "\nCurrent GAMEs:\nRoulette (Type `!cc roulette help` for more info)";
+                    help_text += "\nCurrent Games:\nRoulette (Type `!cc roulette help` for more info)";
                     break;
                 case 'roulette':
                     help_text = `You can play roulette by typing \`!cc roulette [AMOUNT_TO_BET] [(ROULETTE_OPTIONS)|ROULETTE_NUMBER]\`.`;

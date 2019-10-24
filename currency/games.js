@@ -7,7 +7,7 @@ const TAX_RATE = .15;
 var GAMES = {
     //!cc roulette [AMOUNT] [args]
     handleCommand(args, received) {
-        if (args && args[0] === "help" || !args[1]) {
+        if (args && args[0] === "games" || !args[1]) {
             HELP_COMMANDS.helpGames("games", received);
             return;
         }

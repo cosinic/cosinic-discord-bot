@@ -20,7 +20,7 @@ var GAMES = {
                 case "bet":
                     break;
                 case "roulette":
-                    if (amount === "help") {
+                    if (args[1] === "help") {
                         HELP_COMMANDS.helpGames("roulette", received);
                         return;
                     }

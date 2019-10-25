@@ -74,7 +74,8 @@ var CURRENCY_COMMANDS = {
     },
     displayAverageEconomy(received) {
         let avgEcon = CONSTANTS.sanitizeAmount(getAverageEconomy());
-        let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${CONSTANTS.formatCurrency(avgEcon)}`;
+        let poorCount = getPovertyCount();
+        let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${CONSTANTS.formatCurrency(avgEcon)}. Number of users receiving economy stamps: ${poorCount}`;
         received.channel.send(message);
     },
     payUser(userId, username, args, received) {
@@ -281,6 +282,26 @@ function getAverageEconomy() {
         return avg;
     } catch (err) {
         return 0;
+    }
+}
+
+function getPovertyCount() {
+    try {
+        let bot_id = client.user.id;
+        let accounts = bank.getData('/accounts');
+        let poor = 0;
+
+        let avgEcon = getAverageEconomy();
+        for (let id in accounts) {
+            if (id !== bot_id) {
+                if (accounts[id].balance < (avgEcon / 2)) {
+                    poor++;
+                }
+            }
+        }
+        return poor;
+    } catch (err) {
+
     }
 }
 

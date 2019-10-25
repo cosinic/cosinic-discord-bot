@@ -11,7 +11,6 @@ var GAMES = {
             return;
         }
         let game = args[0];
-        let amount = CONSTANTS.sanitizeAmount(args[1]);
         let arg_one_raw = args[1];
         args = args.slice(2);
         let userId = received.author.id;
@@ -24,7 +23,7 @@ var GAMES = {
                         HELP_COMMANDS.helpGames("roulette", received);
                         return;
                     }
-                    this.playRoulette(userId, amount, args)
+                    this.playRoulette(userId, arg_one_raw, args)
                         .then(msg => {
                             received.channel.send(msg);
                         }).catch(err => {
@@ -38,6 +37,16 @@ var GAMES = {
     },
     async playRoulette(userId, amount, args) {
         let userBalance = BANK.getRawBalance(userId);
+
+        if (amount === "all") {
+            amount = userBalance;
+        }
+        if (amount === "half") {
+            amount = userBalance / 2;
+        }
+
+        amount = sanitizeAmount(amount);
+
         if (amount === 0) {
             return Promise.reject(`You need to bet at least .01 ${CONSTANTS.formatCurrency(1)}`);
         }

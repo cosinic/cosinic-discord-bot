@@ -44,7 +44,7 @@ var HELP_COMMANDS = {
                     help_text += "\nCurrent Games:\nRoulette (Type `!cc roulette help` for more info)";
                     break;
                 case 'roulette':
-                    help_text = `You can play roulette by typing \`!cc roulette [AMOUNT_TO_BET] [(ROULETTE_OPTIONS)|ROULETTE_NUMBER]\`.`;
+                    help_text = `You can play roulette by typing \`!cc roulette [AMOUNT_TO_BET | all | half] [(ROULETTE_OPTIONS)|ROULETTE_NUMBER]\`.`;
                     help_text += `\nROULETTE_OPTIONS are: \`[even | odd | red | black | 1-18 | 19-36 | 1-12 | 13-24 | 25-36]\``;
                     break;
                 default:

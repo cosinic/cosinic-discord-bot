@@ -45,7 +45,7 @@ var GAMES = {
             amount = userBalance / 2;
         }
 
-        amount = sanitizeAmount(amount);
+        amount = CONSTANTS.sanitizeAmount(amount);
 
         if (amount === 0) {
             return Promise.reject(`You need to bet at least .01 ${CONSTANTS.formatCurrency(1)}`);

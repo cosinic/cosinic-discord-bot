@@ -48,6 +48,10 @@ var CURRENCY_COMMANDS = {
                 this.displayBalance(client.user.id, client.user.username, received);
                 return;
 
+            case "casino":
+                this.displayBalance(CONSTANTS.CASINO.id, CONSTANTS.CASINO.name, received);
+                return;
+
             case "economy":
                 this.displayAverageEconomy(received);
                 return;
@@ -120,7 +124,11 @@ var CURRENCY_COMMANDS = {
     depositToBot(amount) {
         amount = CONSTANTS.sanitizeAmount(amount);
         return deposit(client.user.id, amount);
-    }
+    },
+    depositToCasino(amount) {
+        amount = CONSTANTS.sanitizeAmount(amount);
+        return deposit(CONSTANTS.CASINO.id, amount);
+    },
 }
 
 function openAccount(userId) {

@@ -64,7 +64,7 @@ var GAMES = {
                     BANK.depositToBot(CONSTANTS.sanitizeAmount(payout * CONSTANTS.CURRENCY.TAX_RATE)); // Give Bank outside 15% of earnings (for Dividends/Rewards Pool)
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_mouth: Congratulations <@${userId}>, you won ${payout} ${CONSTANTS.formatCurrency(payout)} *(Tax: ${CONSTANTS.CURRENCY.TAX_RATE * 100}%)*`);
                 } else {
-                    BANK.depositToBot(CONSTANTS.sanitizeAmount(amount));
+                    BANK.depositToCasino(CONSTANTS.sanitizeAmount(amount)); // Deposit losings to Casino
                     return Promise.resolve(`Ball Landed On: ${result.number} (${result.color})\n:money_with_wings: Better luck next time, <@${userId}>.`);
                 }
             }).catch(err => {

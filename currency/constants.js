@@ -1,6 +1,10 @@
 const CURRENCY = "Cosinic Coin";
 
 const CONSTANTS = {
+    "CASINO": {
+        "id": "CASINO",
+        "name": "Casino Money Pool"
+    },
     "CURRENCY": {
         "TAX_RATE": 0.15,
         "DIVIDEND_RATE": 0.3, // 30% of bank wealth gets distributed equally to everyone

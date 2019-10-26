@@ -270,7 +270,7 @@ function economyStamps(accounts) {
     let distributed_per_person = CONSTANTS.sanitizeAmount(distributionAmount / accounts.length);
     accounts.forEach(id => {
         deposit(id, distributed_per_person);
-        client.users.get(id).send(`${EMOJI_MONEY} You have been given economy stamps of ${distributed_per_person} ${CONSTANTS.formatCurrency(distributed_per_person)}!`);
+        //client.users.get(id).send(`${EMOJI_MONEY} You have been given economy stamps of ${distributed_per_person} ${CONSTANTS.formatCurrency(distributed_per_person)}!`);
     });
 }
 

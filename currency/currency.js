@@ -280,7 +280,7 @@ function getAverageEconomy() {
         let accounts = bank.getData('/accounts');
         let population = Object.keys(accounts).length;
         let avg = Object.keys(accounts).reduce((sum, id) => {
-            if (id === bot_id) { // Don't count the bot balance
+            if (id === bot_id || id === CONSTANTS.CASINO.id) { // Don't count the bot balance or casino balance
                 population--;
                 return sum;
             } else {
@@ -301,7 +301,7 @@ function getPovertyCount() {
 
         let avgEcon = getAverageEconomy();
         for (let id in accounts) {
-            if (id !== bot_id) {
+            if (id !== bot_id && id !== CONSTANTS.CASINO.id) {
                 if (accounts[id].balance < (avgEcon / 2)) {
                     poor++;
                 }
@@ -322,7 +322,7 @@ function checkEconomy() {
         let toDonate = [];
         let toDividends = [];
         for (let id in accounts) {
-            if (id !== bot_id) {
+            if (id !== bot_id && id !== CONSTANTS.CASINO.id) {
                 if (accounts[id].balance < (avgEcon / 2)) { // If the user's balance is below 50% of the average economy
                     toDonate.push(id); // Then put them on the donor list
                 }

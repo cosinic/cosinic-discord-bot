@@ -7,6 +7,7 @@ const CONSTANTS = {
     },
     "CURRENCY": {
         "TAX_RATE": 0.15,
+        "CASINO_TAX_RATE": 0.005,
         "DIVIDEND_RATE": 0.3, // 30% of bank wealth gets distributed equally to everyone
         "POVERTY_RATE": 0.15 // 15% of bank goes to the poverty before freedom dividends
     },

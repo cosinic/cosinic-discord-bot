@@ -313,11 +313,21 @@ function getPovertyCount() {
     }
 }
 
+function taxCasino() {
+    let bot_id = client.user.id;
+    let CASINO_BALANCE = getBalance(CONSTANTS.CASINO.id);
+    let taxed_amount = CASINO_BALANCE * CONSTANTS.CURRENCY.CASINO_TAX_RATE;
+    withdraw(CONSTANTS.CASINO.id, taxed_amount);
+    deposit(bot_id, taxed_amount);
+}
+
 function checkEconomy() {
     try {
         let bot_id = client.user.id;
         let accounts = bank.getData('/accounts');
         let avgEcon = getAverageEconomy();
+
+        taxCasino(); // Tax Casino first to boost economy
 
         let toDonate = [];
         let toDividends = [];

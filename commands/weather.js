@@ -23,12 +23,12 @@ var forecastDB = new JsonDB(new JsonDBConfig("db/forecast", true, false, '/'));
 /** Weather Schedule DB Layout
  * accounts {
  * * userid {
- * * * city
+ * * * location
  * * }
  * }
  * channels {
  * * channelid {
- * * * city
+ * * * location
  * * }
  * }
  */
@@ -45,13 +45,14 @@ var WEATHER_COMMANDS = {
                     HELP_COMMANDS.help("weather", received);
                     break;
                 case "week":
-                    this.week(args.slice(0), received);
+                    this.week(args.slice(1), received);
                     break;
                 case "tomorrow":
-                    this.tomorrow(args.slice(0), received);
+                    this.tomorrow(args.slice(1), received);
                     break;
                 case "set":
                 case "schedule":
+                    this.schedule(args.slice(1), received);
                     break;
                 case "today":
                 default:
@@ -93,7 +94,7 @@ var WEATHER_COMMANDS = {
                 .then((data) => {
                     let weather_data = data.forecast;
                     location = data.location || location;
-                
+
                     let tomorrow_index = 1;
                     for (let i = 0; i < weather_data.length; i++) { // Goes through 7 day forecast to find the index of tomorrow's forecast
                         let date = weather_data[i].valid_date.replace(/-/g, '\/');
@@ -163,12 +164,35 @@ var WEATHER_COMMANDS = {
                     received.channel.send(`:cloud_tornado: Error ${err}`);
                 })
         }
+    },
+    schedule(args, received) {
+        if (args.length) {
+            let id = received.author.id; // Default set as author ID
+            let isChannel = false;
+            if (received.guild && received.channel.type === "text") { // If part of guild and typed in text channel
+                id = received.channel.id; // Then set as channel id
+                isChannel = true;
+            }
+
+            if (args[0] === "stop") {
+                deleteSchedule(id, isChannel);
+                received.channel.send('Weather forecast will stop posting here.');
+                return;
+            }
+
+            location = args.join(' ');
+            if (setSchedule(id, location, isChannel)) {
+                received.channel.send('Weather forecast is now scheduled to post here daily for: ' + location);
+            } else {
+                received.channel.send(':cloud_tornado: Something went wrong.');
+            }
+        }
     }
 }
 
 function formatCurrentMessage(location, unit, data) {
     let weather_data = data;
-    let location = weather_data.city_name + ', ' + weather_data.state_code;
+    location = weather_data.city_name + ', ' + weather_data.state_code || location;
     let weather_id = weather_data.weather.code;
     let description = weather_data.weather.description;
     let temp = weather_data.temp;
@@ -183,15 +207,15 @@ function formatCurrentMessage(location, unit, data) {
     let low = weather_data.low || "N/A";
 
     let message = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\n`;
-        message += `Temperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\n`;
-        message += `Today's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\n`;
-        message += `Relative Humidity: ${humidity}%\n`;
-        message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+    message += `Temperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\n`;
+    message += `Today's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\n`;
+    message += `Relative Humidity: ${humidity}%\n`;
+    message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
 
-    return message;    
+    return message;
 }
 
-function formatTomorrowMessage(location, unit, data){
+function formatTomorrowMessage(location, unit, data) {
     let weather_data = data;
 
     let date = weather_data.valid_date.replace(/-/g, '\/');
@@ -249,10 +273,10 @@ function formatForecastMessage(unit, data) {
     let snow = weather_data.snow;
 
     let message = `\n-----------------\n`;
-        message += `**${dateFormatted}** (${dayOfWeek}):\n`;
-        message += `${getWeatherEmoji(weather_id)} ${description}\n`;
-        message += `**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\n`;
-        message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+    message += `**${dateFormatted}** (${dayOfWeek}):\n`;
+    message += `${getWeatherEmoji(weather_id)} ${description}\n`;
+    message += `**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\n`;
+    message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
     if (precip > 0) {
         message += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
     }
@@ -458,17 +482,120 @@ getWeatherEmoji = (id) => {
     return emoji || ":sun_with_face:"; // Or just return a sun if not found at all
 }
 
+function setSchedule(id, location, isChannel = false) {
+    try {
+        let path = isChannel ? 'channels' : 'accounts';
+        scheduleDB.push(`/${path}/${id}`, {
+            "location": location
+        });
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+function deleteSchedule(id, isChannel = false) {
+    try {
+        let path = isChannel ? 'channels' : 'accounts';
+        scheduleDB.delete(`/${path}/${id}`);
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
 function runSchedule() {
     let currentTime = new Date();
     let currentHour = currentTime.getHours();
-    if (currentHour < 12) { // Then return today weather broadcast 
+    let unit = UNITS;
 
-    } else { // Then return 
+    let tomorrow = new Date(currentTime.setDate(currentTime.getDate() + 1));
+    tomorrow = getFormattedDate(tomorrow);
+
+    let weatherman_text = `${"=".repeat(13)} :sun_with_face: Weather Forecast :umbrella2: ${"=".repeat(13)}`;
+
+    try {
+        let accounts = scheduleDB.getData('/accounts');
+        let channels = scheduleDB.getData('/channels');
+
+        if (Object.keys(accounts).length) {
+            for (var userid in accounts) {
+                let user_location = accounts[userid].location;
+
+                if (currentHour < 12) { // Then return today weather broadcast
+                    fetchCurrentWeather(user_location, unit)
+                        .then((data) => {
+                            let weather = formatCurrentMessage(user_location, unit, data);
+                            client.users.get(userid).send(weatherman_text);
+                            client.users.get(userid).send(weather);
+                        }).catch(err => {});
+                } else { // Then return next day
+                    fetchWeeklyWeather(user_location, unit)
+                        .then((data) => {
+                            let weather_data = data.forecast;
+                            location = data.location || user_location;
+
+                            let tomorrow_index = 1;
+                            for (let i = 0; i < weather_data.length; i++) { // Goes through 7 day forecast to find the index of tomorrow's forecast
+                                let date = weather_data[i].valid_date.replace(/-/g, '\/');
+                                let datetime = new Date(date);
+                                let dateFormatted = getFormattedDate(datetime);
+                                if (dateFormatted === tomorrow) {
+                                    tomorrow_index = i;
+                                    tomorrow = dateFormatted;
+                                    break;
+                                }
+                            }
+                            let tomorrow_data = weather_data[tomorrow_index];
+                            let weather = formatTomorrowMessage(location, unit, tomorrow_data);
+                            client.users.get(userid).send(weatherman_text);
+                            client.users.get(userid).send(weather);
+                        }).catch(err => {});
+                }
+            }
+        }
+
+        if (Object.keys(channels).length) {
+            for (var channelid in channels) {
+                let channel_location = channels[channelid].location;
+                if (currentHour < 12) { // Then return today weather broadcast
+                    fetchCurrentWeather(channel_location, unit)
+                        .then((data) => {
+                            let weather = formatCurrentMessage(channel_location, unit, data);
+                            client.channels.get(channelid).send(weatherman_text);
+                            client.channels.get(channelid).send(weather);
+                        }).catch(err => { console.log(err); });
+                } else { // Then return next day
+                    fetchWeeklyWeather(channel_location, unit)
+                        .then((data) => {
+                            let weather_data = data.forecast;
+                            location = data.location || channel_location;
+
+                            let tomorrow_index = 1;
+                            for (let i = 0; i < weather_data.length; i++) { // Goes through 7 day forecast to find the index of tomorrow's forecast
+                                let date = weather_data[i].valid_date.replace(/-/g, '\/');
+                                let datetime = new Date(date);
+                                let dateFormatted = getFormattedDate(datetime);
+                                if (dateFormatted === tomorrow) {
+                                    tomorrow_index = i;
+                                    tomorrow = dateFormatted;
+                                }
+                            }
+                            let tomorrow_data = weather_data[tomorrow_index];
+                            let weather = formatTomorrowMessage(location, unit, tomorrow_data);
+                            client.channels.get(channelid).send(weatherman_text);
+                            client.channels.get(channelid).send(weather);
+                        }).catch(err => { console.log(err); });
+                }
+            }
+        }
+
+    } catch (error) {
 
     }
 }
 
-// at 7 AM and 10 PM (22)
+// at 7 AM and 10 PM (22) => 0 7,22 * * *
 cron.schedule('0 7,22 * * *', () => {
     runSchedule();
 }, {

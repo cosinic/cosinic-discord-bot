@@ -20,18 +20,44 @@ cities: {
 */
 var forecastDB = new JsonDB(new JsonDBConfig("db/forecast", true, false, '/'));
 
+/** Weather Schedule DB Layout
+ * accounts {
+ * * userid {
+ * * * city
+ * * }
+ * }
+ * channels {
+ * * channelid {
+ * * * city
+ * * }
+ * }
+ */
+var scheduleDB = new JsonDB(new JsonDBConfig("db/weather_schedule", true, false, '/'));
+
 const CURR_WEATHER_URL = 'https://api.weatherbit.io/v2.0/current';
 const FORECAST_WEATHER_URL = 'https://api.weatherbit.io/v2.0/forecast/daily';
 const UNITS = 'I'; //M (Metric) | S (Scientific) | I (Imperial)
 var WEATHER_COMMANDS = {
     handleCommand(args, received) {
         if (args.length) {
-            if (args[0] === "help") {
-                HELP_COMMANDS.help("weather", received);
-                return;
+            switch (args[0]) {
+                case "help":
+                    HELP_COMMANDS.help("weather", received);
+                    break;
+                case "week":
+                    this.week(args.slice(0), received);
+                    break;
+                case "tomorrow":
+                    this.tomorrow(args.slice(0), received);
+                    break;
+                case "set":
+                case "schedule":
+                    break;
+                case "today":
+                default:
+                    this.today(args, received);
+                    break;
             }
-
-            this.today(args, received);
         }
     },
     today(args, received) {
@@ -43,23 +69,46 @@ var WEATHER_COMMANDS = {
             }
             let location = args.join(' ');
             fetchCurrentWeather(location, unit)
-                .then((weather_data) => {
-                    let location = weather_data.city_name + ', ' + weather_data.state_code;
-                    let weather_id = weather_data.weather.code;
-                    let description = weather_data.weather.description;
-                    let temp = weather_data.temp;
-                    let feels_temp = weather_data.app_temp;
-                    let wind = weather_data.wind_spd;
-                    let humidity = weather_data.rh;
-                    if (unit === "M") {
-                        wind = wind * 3.6;
-                    }
-                    let wind_dir = weather_data.wind_cdir_full;
-                    let high = weather_data.high || "N/A";
-                    let low = weather_data.low || "N/A";
+                .then((data) => {
+                    let message = formatCurrentMessage(location, unit, data)
+                    received.channel.send(message);
+                }).catch(err => {
+                    received.channel.send(`:cloud_tornado: Error ${err}`);
+                })
+        }
+    },
+    tomorrow(args, received) {
+        if (args.length > 0) {
+            let unit = UNITS;
+            if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
+                unit = args[0];
+                args = args.slice(1);
+            }
+            let location = args.join(' ');
+            let today = new Date();
+            let tomorrow = new Date(today.setDate(today.getDate() + 1));
+            tomorrow = getFormattedDate(tomorrow);
 
-                    let weatherInfo = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\nTemperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\nToday's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\nRelative Humidity: ${humidity}%\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
-                    received.channel.send(weatherInfo);
+            fetchWeeklyWeather(location, unit)
+                .then((data) => {
+                    let weather_data = data.forecast;
+                    location = data.location || location;
+                
+                    let tomorrow_index = 1;
+                    for (let i = 0; i < weather_data.length; i++) { // Goes through 7 day forecast to find the index of tomorrow's forecast
+                        let date = weather_data[i].valid_date.replace(/-/g, '\/');
+                        let datetime = new Date(date);
+                        let dateFormatted = getFormattedDate(datetime);
+                        if (dateFormatted === tomorrow) {
+                            tomorrow_index = i;
+                            tomorrow = dateFormatted;
+                            break;
+                        }
+                    }
+
+                    let tomorrow_data = weather_data[tomorrow_index];
+                    let message = formatTomorrowMessage(location, unit, tomorrow_data);
+                    received.channel.send(message);
                 }).catch(err => {
                     received.channel.send(`:cloud_tornado: Error ${err}`);
                 })
@@ -77,7 +126,7 @@ var WEATHER_COMMANDS = {
                 .then((data) => {
                     let weather_data = data.forecast;
                     location = data.location || location;
-                    let equalsSignLength = 50;
+                    let equalsSignLength = 44; // 44 equals signs seems to be good on mobile (Tested on Pixel XL)
                     let header = `${'='.repeat(equalsSignLength)}\n${' '.repeat((equalsSignLength * 2 - 19 - location.length)/2)}7 Day Forecast for ${location}\n${'='.repeat(equalsSignLength)}`;
                     received.channel.send(header);
 
@@ -95,33 +144,9 @@ var WEATHER_COMMANDS = {
                     const displayLoop = async _ => {
                         let dayInfo = '';
                         for (let i = 0; i < 7; i++) {
-                            let date = weather_data[i].valid_date;
-                            let datetime = new Date(date);
-                            let dateFormatted = getFormattedDate(datetime);
-                            let dayOfWeek = DAYS[datetime.getDay()];
-
-                            let weather_id = weather_data[i].weather.code;
-                            let description = weather_data[i].weather.description;
-                            let temp = weather_data[i].temp;
-                            let wind = weather_data[i].wind_spd;
-                            if (unit === "M") {
-                                wind = wind * 3.6;
-                            }
-                            let wind_dir = weather_data[i].wind_cdir_full;
-                            let high = weather_data[i].high_temp || "N/A";
-                            let low = weather_data[i].low_temp || "N/A";
-                            let pop = weather_data[i].pop;
-                            let precip = weather_data[i].precip;
-                            let snow = weather_data[i].snow;
-
-                            dayInfo += `\n-----------------\n**${dateFormatted}** (${dayOfWeek}):\n${getWeatherEmoji(weather_id)} ${description}\n**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\nWind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
-                            if (precip > 0) {
-                                dayInfo += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
-                            }
-                            if (snow > 0) {
-                                dayInfo += `\nAccumulated snowfall: ${snow}${getUnitAmount(unit)}.`;
-                            }
-
+                            let forecast_data = weather_data[i];
+                            let message = formatForecastMessage(unit, forecast_data);
+                            dayInfo += message;
                             if (i % 3 === 0 || i === 6) { // Posts every 3 messages to lessen discord rate limit
                                 await delayMessage(() => {
                                     received.channel.send(dayInfo);
@@ -139,6 +164,102 @@ var WEATHER_COMMANDS = {
                 })
         }
     }
+}
+
+function formatCurrentMessage(location, unit, data) {
+    let weather_data = data;
+    let location = weather_data.city_name + ', ' + weather_data.state_code;
+    let weather_id = weather_data.weather.code;
+    let description = weather_data.weather.description;
+    let temp = weather_data.temp;
+    let feels_temp = weather_data.app_temp;
+    let wind = weather_data.wind_spd;
+    let humidity = weather_data.rh;
+    if (unit === "M") {
+        wind = wind * 3.6;
+    }
+    let wind_dir = weather_data.wind_cdir_full;
+    let high = weather_data.high || "N/A";
+    let low = weather_data.low || "N/A";
+
+    let message = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\n`;
+        message += `Temperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\n`;
+        message += `Today's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\n`;
+        message += `Relative Humidity: ${humidity}%\n`;
+        message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+
+    return message;    
+}
+
+function formatTomorrowMessage(location, unit, data){
+    let weather_data = data;
+
+    let date = weather_data.valid_date.replace(/-/g, '\/');
+    let datetime = new Date(date);
+    let dateFormatted = getFormattedDate(datetime);
+    let dayOfWeek = DAYS[datetime.getDay()];
+
+    let weather_id = weather_data.weather.code;
+    let description = weather_data.weather.description;
+    let temp = weather_data.temp;
+    let wind = weather_data.wind_spd;
+    if (unit === "M") {
+        wind = wind * 3.6;
+    }
+    let wind_dir = weather_data.wind_cdir_full;
+    let high = weather_data.high_temp || "N/A";
+    let low = weather_data.low_temp || "N/A";
+    let pop = weather_data.pop;
+    let precip = weather_data.precip;
+    let snow = weather_data.snow;
+
+    let message = `Weather in ${location} tomorrow *(${dateFormatted})*:\n`;
+    message += `${getWeatherEmoji(weather_id)} ${description}\n`;
+    message += `**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\n`;
+    message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+    if (precip > 0) {
+        message += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
+    }
+    if (snow > 0) {
+        message += `\nAccumulated snowfall: ${snow}${getUnitAmount(unit)}.`;
+    }
+    return message;
+}
+
+function formatForecastMessage(unit, data) {
+    let weather_data = data;
+
+    let date = weather_data.valid_date.replace(/-/g, '\/');
+    let datetime = new Date(date);
+    let dateFormatted = getFormattedDate(datetime);
+    let dayOfWeek = DAYS[datetime.getDay()];
+
+    let weather_id = weather_data.weather.code;
+    let description = weather_data.weather.description;
+    let temp = weather_data.temp;
+    let wind = weather_data.wind_spd;
+    if (unit === "M") {
+        wind = wind * 3.6;
+    }
+    let wind_dir = weather_data.wind_cdir_full;
+    let high = weather_data.high_temp || "N/A";
+    let low = weather_data.low_temp || "N/A";
+    let pop = weather_data.pop;
+    let precip = weather_data.precip;
+    let snow = weather_data.snow;
+
+    let message = `\n-----------------\n`;
+        message += `**${dateFormatted}** (${dayOfWeek}):\n`;
+        message += `${getWeatherEmoji(weather_id)} ${description}\n`;
+        message += `**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\n`;
+        message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
+    if (precip > 0) {
+        message += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
+    }
+    if (snow > 0) {
+        message += `\nAccumulated snowfall: ${snow}${getUnitAmount(unit)}.`;
+    }
+    return message;
 }
 
 /**
@@ -223,7 +344,7 @@ async function getForecastWeather(location_data, unit) {
 async function fetchForecast(location, unit) {
     if (!location) return;
     unit = unit || UNITS;
-    let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
+    let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}&days=8`);
     if (forecast.data.city_name) {
         let city = forecast.data.city_name;
         let state = forecast.data.state_code;
@@ -300,7 +421,7 @@ function getFormattedDate(date) {
     let year = date.getFullYear();
     let month = (1 + date.getMonth()).toString().padStart(2, '0');
     let day = date.getDate().toString().padStart(2, '0');
-  
+
     return month + '/' + day + '/' + year;
 }
 
@@ -336,5 +457,22 @@ getWeatherEmoji = (id) => {
     emoji = WEATHER_CONDITIONS[status_category];
     return emoji || ":sun_with_face:"; // Or just return a sun if not found at all
 }
+
+function runSchedule() {
+    let currentTime = new Date();
+    let currentHour = currentTime.getHours();
+    if (currentHour < 12) { // Then return today weather broadcast 
+
+    } else { // Then return 
+
+    }
+}
+
+// at 7 AM and 10 PM (22)
+cron.schedule('0 7,22 * * *', () => {
+    runSchedule();
+}, {
+    timezone: "America/New_York"
+});
 
 module.exports = WEATHER_COMMANDS;

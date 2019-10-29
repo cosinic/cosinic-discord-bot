@@ -17,11 +17,12 @@ var HELP_COMMANDS = {
                     \nE.G: \`!reddit funny now top\` will post the top reddit post instantly.`;
                     break;
                 case 'weather':
-                    help_text = "You can use this command like: `!weather (optional)[tomorrow|week|set] (optional:default=I)[UNIT(M=Metric|S=Scientific|I=Imperial)] [CITY_NAME]`";
-                    help_text += "\nE.G. `!weather New Brunswick, NJ` will display the current weather in New Brunswick.    ";
+                    help_text = "You can use this command like: `!weather (optional)[tomorrow|week|schedule|set|default] (optional:default=I)[UNIT(M=Metric|S=Scientific|I=Imperial)] [CITY_NAME]`";
+                    help_text += "\nE.G. `!weather New Brunswick, NJ` will display the current weather in New Brunswick.";
+                    help_text += "\nE.G. `!weather set|default East Brunswick, NJ` will make East Brunswick your default location. Next time you can just do `!weather` and it'll post current weather for default.";
                     help_text += "\nE.G. `!weather week M East Brunswick, NJ` will display a 7 day forecast in METRIC units for East Brunswick.";
-                    help_text += "\nE.G. `!weather set Pittsburg, PA` will schedule the bot to post the weather daily at 7 AM and the next day's forecast at 10 PM for Pittsburg.";
-                    help_text += "\nWhen using `set` if you DM the bot, it will DM you. If you type it in a channel, it will post on that channel.";
+                    help_text += "\nE.G. `!weather schedule Pittsburg, PA` will schedule the bot to post the weather daily at 7 AM and the next day's forecast at 10 PM for Pittsburg.";
+                    help_text += "\nWhen using `schedule` if you DM the bot, it will DM you. If you type it in a channel, it will post on that channel.";
                     break;
                 case 'diceroll':
                     help_text = "You can use this command like: `!d [NUMBER]` or `!d[1-999]` or `!d [MIN] [MAX]`";

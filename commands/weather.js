@@ -4,8 +4,6 @@ var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
 const cron = require('node-cron');
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 const WEATHER_API = process.env.WEATHER_API;
 
 /* Weather Forecast DB Layout
@@ -34,9 +32,25 @@ var forecastDB = new JsonDB(new JsonDBConfig("db/forecast", true, false, '/'));
  */
 var scheduleDB = new JsonDB(new JsonDBConfig("db/weather_schedule", true, false, '/'));
 
+/** Weather Defaults DB Layout
+ * accounts {
+ * * userid {
+ * * * location
+ * * * unit
+ * * }
+ * }
+ */
+var defaultDB = new JsonDB(new JsonDBConfig("db/weather_defaults", true, false, '/'));
+
 const CURR_WEATHER_URL = 'https://api.weatherbit.io/v2.0/current';
 const FORECAST_WEATHER_URL = 'https://api.weatherbit.io/v2.0/forecast/daily';
-const UNITS = 'I'; //M (Metric) | S (Scientific) | I (Imperial)
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DEFAULT_UNIT = 'I';
+const UNIT_WORD = {
+    "I": "Imperial",
+    "S": "Scientific",
+    "M": "Metric"
+}
 var WEATHER_COMMANDS = {
     handleCommand(args, received) {
         if (args.length) {
@@ -50,25 +64,34 @@ var WEATHER_COMMANDS = {
                 case "tomorrow":
                     this.tomorrow(args.slice(1), received);
                     break;
-                case "set":
                 case "schedule":
                     this.schedule(args.slice(1), received);
                     break;
-                case "today":
+                case "set":
+                case "default":
+                    this.setDefault(args.slice(1), received);
+                    break;
                 default:
                     this.today(args, received);
                     break;
             }
+        } else { // User typed in !weather so see if they have default location
+            this.displayDefault(received);
         }
     },
     today(args, received) {
         if (args.length > 0) {
-            let unit = UNITS;
+            let unit = DEFAULT_UNIT;
             if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
                 unit = args[0];
                 args = args.slice(1);
             }
             let location = args.join(' ');
+            if (!location) {
+                received.channel.send(`No location specified. Will try to display default location.`);
+                this.displayDefault(received);
+                return;
+            }
             fetchCurrentWeather(location, unit)
                 .then((data) => {
                     let message = formatCurrentMessage(location, unit, data)
@@ -80,7 +103,7 @@ var WEATHER_COMMANDS = {
     },
     tomorrow(args, received) {
         if (args.length > 0) {
-            let unit = UNITS;
+            let unit = DEFAULT_UNIT;
             if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
                 unit = args[0];
                 args = args.slice(1);
@@ -117,7 +140,7 @@ var WEATHER_COMMANDS = {
     },
     week(args, received) {
         if (args.length > 0) {
-            let unit = UNITS;
+            let unit = DEFAULT_UNIT;
             if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
                 unit = args[0];
                 args = args.slice(1);
@@ -187,6 +210,35 @@ var WEATHER_COMMANDS = {
                 received.channel.send(':cloud_tornado: Something went wrong.');
             }
         }
+    },
+    setDefault(args, received) {
+        if (args.length) {
+            let unit = DEFAULT_UNIT;
+            if (["M", "S", "I"].indexOf(args[0]) > -1) { //Then first args is units
+                unit = args[0];
+                args = args.slice(1);
+            }
+            let id = received.author.id;
+            let location = args.join(' ');
+            if (setDefaults(id, unit, location)) {
+                received.channel.send(`<@${id}> your default weather location has been set to: **${location}**. Your default unit is: ${UNIT_WORD[unit]}`);
+            } else {
+                received.channel.send(':cloud_tornado: Something went wrong.');
+            }
+        } else {
+            received.channel.send(':cloud_tornado: Invalid Format. You can type `!weather set (optional)[M|S|I] [LOCATION]` to set your default location and units.');
+        }
+    },
+    displayDefault(received) {
+        let id = received.author.id;
+        let defaults = getDefaults(id);
+        if (defaults) {
+            let location = defaults.location;
+            let unit = defaults.unit || DEFAULT_UNIT;
+            this.today([unit, location], received);
+        } else {
+            received.channel.send(':cloud_tornado: No default has been set. You can type `!weather set [LOCATION]` to set your default location to use `!weather` without any parameters.');
+        }
     }
 }
 
@@ -195,6 +247,8 @@ function formatCurrentMessage(location, unit, data) {
     location = weather_data.city_name + ', ' + weather_data.state_code || location;
     let weather_id = weather_data.weather.code;
     let description = weather_data.weather.description;
+    let overall_weather_id = weather_data.overall_code
+    let overall_description = weather_data.overall_description;
     let temp = weather_data.temp;
     let feels_temp = weather_data.app_temp;
     let wind = weather_data.wind_spd;
@@ -206,7 +260,8 @@ function formatCurrentMessage(location, unit, data) {
     let high = weather_data.high || "N/A";
     let low = weather_data.low || "N/A";
 
-    let message = `Current weather in ${location}: ${getWeatherEmoji(weather_id)} ${description}\n`;
+    let message = `Current weather in **${location}**: ${getWeatherEmoji(weather_id)} ${description}\n`;
+    message += `Overall forecasted weather: ${getWeatherEmoji(overall_weather_id)} ${overall_description}\n`;
     message += `Temperature: **${temp}${getUnitDegrees(unit)}** (Feels like ${feels_temp}${getUnitDegrees(unit)})\n`;
     message += `Today's High ${high}${getUnitDegrees(unit)} / Low ${low}${getUnitDegrees(unit)}\n`;
     message += `Relative Humidity: ${humidity}%\n`;
@@ -237,9 +292,9 @@ function formatTomorrowMessage(location, unit, data) {
     let precip = weather_data.precip;
     let snow = weather_data.snow;
 
-    let message = `Weather in ${location} tomorrow *(${dateFormatted})*:\n`;
-    message += `${getWeatherEmoji(weather_id)} ${description}\n`;
-    message += `**${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\n`;
+    let message = `Weather tomorrow in **${location}**:\n`;
+    message += `${getWeatherEmoji(weather_id)} ${description} *(${dayOfWeek} ${dateFormatted})*\n`;
+    message += `Temperature: **${temp}${getUnitDegrees(unit)}** (High ${high}${getUnitDegrees(unit)}/ Low ${low}${getUnitDegrees(unit)})\n`;
     message += `Wind Speeds: ${wind}*${getUnitSpeed(unit)}* ${wind_dir}`;
     if (precip > 0) {
         message += `\nAccumulated rain: ${precip}${getUnitAmount(unit)}. Chance of precipitation: ${pop}%`;
@@ -294,7 +349,7 @@ function formatForecastMessage(unit, data) {
  */
 async function fetchCurrentWeather(location, unit) {
     if (!location) return;
-    unit = unit || UNITS;
+    unit = unit || DEFAULT_UNIT;
     let today = await axios.get(`${CURR_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}`);
     if (today.data.count) {
         let weather = today.data.data[0];
@@ -302,6 +357,8 @@ async function fetchCurrentWeather(location, unit) {
         if (forecast.forecast) {
             weather["high"] = forecast.forecast[0].high_temp; //First data in forecast is current day
             weather["low"] = forecast.forecast[0].low_temp;
+            weather["overall_code"] = forecast.forecast[0].weather.code;
+            weather["overall_description"] = forecast.forecast[0].weather.description;
         }
         return weather;
     } else {
@@ -316,7 +373,7 @@ async function fetchCurrentWeather(location, unit) {
  */
 async function fetchWeeklyWeather(location, unit) {
     if (!location) return;
-    unit = unit || UNITS;
+    unit = unit || DEFAULT_UNIT;
     let weather = {
         city_name: location,
         state_code: "",
@@ -338,7 +395,7 @@ async function fetchWeeklyWeather(location, unit) {
  */
 async function getForecastWeather(location_data, unit) {
     if (!location_data) return;
-    unit = unit || UNITS;
+    unit = unit || DEFAULT_UNIT;
     let city = location_data.city_name;
     let state = location_data.state_code;
     let country = location_data.country_code;
@@ -367,7 +424,7 @@ async function getForecastWeather(location_data, unit) {
  */
 async function fetchForecast(location, unit) {
     if (!location) return;
-    unit = unit || UNITS;
+    unit = unit || DEFAULT_UNIT;
     let forecast = await axios.get(`${FORECAST_WEATHER_URL}?key=${WEATHER_API}&units=${unit}&city=${location}&days=8`);
     if (forecast.data.city_name) {
         let city = forecast.data.city_name;
@@ -482,6 +539,29 @@ getWeatherEmoji = (id) => {
     return emoji || ":sun_with_face:"; // Or just return a sun if not found at all
 }
 
+function getDefaults(userid) {
+    try {
+        let user_defaults = defaultDB.getData(`/accounts/${userid}`)
+        return user_defaults;
+    } catch (err) {
+        // No default is set.
+        return false;
+    }
+}
+
+function setDefaults(userid, unit, location) {
+    try {
+        defaultDB.push(`/accounts/${userid}`, {
+            "location": location,
+            "unit": unit
+        });
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
 function setSchedule(id, location, isChannel = false) {
     try {
         let path = isChannel ? 'channels' : 'accounts';
@@ -507,7 +587,7 @@ function deleteSchedule(id, isChannel = false) {
 function runWeatherSchedule() {
     let currentTime = new Date();
     let currentHour = currentTime.getHours();
-    let unit = UNITS;
+    let unit = DEFAULT_UNIT;
 
     let tomorrow = new Date(currentTime.setDate(currentTime.getDate() + 1));
     tomorrow = getFormattedDate(tomorrow);
@@ -519,18 +599,24 @@ function runWeatherSchedule() {
         if (Object.keys(accounts).length) {
             for (var userid in accounts) {
                 let user_location = accounts[userid].location;
+                let user_unit = unit;
+
+                let user_defaults = getDefaults(userid);
+                if (user_defaults) { // If a user has defaults, then display weather in their default unit.
+                    user_unit = user_defaults.unit;
+                }
 
                 if (currentHour < 12) { // Then return today weather broadcast
-                    fetchCurrentWeather(user_location, unit)
+                    fetchCurrentWeather(user_location, user_unit)
                         .then((data) => {
-                            let weather = formatCurrentMessage(user_location, unit, data);
+                            let weather = formatCurrentMessage(user_location, user_unit, data);
                             client.users.get(userid).send(weatherman_text);
                             client.users.get(userid).send(weather);
                         }).catch(err => {
                             console.error(err);
                         });
                 } else { // Then return next day
-                    fetchWeeklyWeather(user_location, unit)
+                    fetchWeeklyWeather(user_location, user_unit)
                         .then((data) => {
                             let weather_data = data.forecast;
                             location = data.location || user_location;
@@ -547,7 +633,7 @@ function runWeatherSchedule() {
                                 }
                             }
                             let tomorrow_data = weather_data[tomorrow_index];
-                            let weather = formatTomorrowMessage(location, unit, tomorrow_data);
+                            let weather = formatTomorrowMessage(location, user_unit, tomorrow_data);
                             client.users.get(userid).send(weatherman_text);
                             client.users.get(userid).send(weather);
                         }).catch(err => {
@@ -613,6 +699,5 @@ cron.schedule('0 6,22 * * *', () => {
 }, {
     timezone: "America/New_York"
 });
-
 
 module.exports = WEATHER_COMMANDS;

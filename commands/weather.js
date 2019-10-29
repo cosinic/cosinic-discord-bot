@@ -197,6 +197,36 @@ var WEATHER_COMMANDS = {
                 isChannel = true;
             }
 
+            if (args[0] === "remove") {
+                let location = args.slice(1).join(' ');
+                if (removeSchedule(id, location, isChannel)) {
+                    let current_locations = getSchedule(id, isChannel);
+                    received.channel.send(':dizzy: Removed successfully.');
+                    if (current_locations) {
+                        if (typeof current_locations === "string") {
+                            received.channel.send(`Current scheduled weather location is: ${current_locations}`);
+                        } else {
+                            received.channel.send(`Current scheduled weather locations are: ${current_locations.map(x => `**${x}**`).join(' & ')}`);
+                        }
+                    } else {
+                        received.channel.send(`All locations removed. Weather forecast will stop posting here.`);
+                    }
+                } else {
+                    let current_locations = getSchedule(id, isChannel);
+                    if (current_locations) {
+                        received.channel.send(`:cloud_tornado: Location was not found.`);
+                        if (typeof current_locations === "string") {
+                            received.channel.send(`Valid location is: ${current_locations}`);
+                        } else {
+                            received.channel.send(`Valid locations are: ${current_locations.map(x => `**${x}**`).join(' OR ')}`);
+                        }
+                    } else {
+                        received.channel.send(`:cloud_tornado: There is no scheduled weather for this channel.`);
+                    }
+                }
+                return;
+            }
+
             if (args[0] === "stop") {
                 deleteSchedule(id, isChannel);
                 received.channel.send('Weather forecast will stop posting here.');
@@ -205,9 +235,13 @@ var WEATHER_COMMANDS = {
 
             location = args.join(' ');
             if (setSchedule(id, location, isChannel)) {
-                let locations = getSchedule(id);
-                locations = typeof locations === "string" ? [locations] : locations;
-                received.channel.send('Weather forecast is now scheduled to post here daily for: ' + locations.join(' & '));
+                let locations = getSchedule(id, isChannel);
+                if (locations) {
+                    locations = (typeof locations === "string" ? [locations] : locations);
+                    received.channel.send('Weather forecast is now scheduled to post here daily for: ' + locations.map(x => `**${x}**`).join(' & '));
+                } else {
+                    received.channel.send(':cloud_tornado: Something went wrong.');
+                }
             } else {
                 received.channel.send(':cloud_tornado: Something went wrong.');
             }
@@ -600,7 +634,34 @@ function setSchedule(id, location, isChannel = false) {
 }
 
 function removeSchedule(id, location, isChannel = false) {
-
+    try {
+        let locations = getSchedule(id, isChannel);
+        let path = isChannel ? 'channels' : 'accounts';
+        if (locations) {
+            if (typeof locations === "string") { // Then there's only one thing to remove and so just delete the whole thing.
+                deleteSchedule(id, isChannel);
+                return true;
+            } else {
+                if (locations.length === 1) { // Then there's only one thing to remove and so just delete the whole thing.
+                    deleteSchedule(id, isChannel);
+                    return true;
+                }
+                let toRemoveIdx = locations.indexOf(location);
+                if (toRemoveIdx > -1) {
+                    let new_locations = locations.splice(toRemoveIdx, 1);
+                    scheduleDB.push(`/${path}/${id}`, {
+                        "location": new_locations
+                    });
+                    return true;
+                } else {
+                    return false; // Location not found in array
+                }
+            }
+        }
+        return false; // No schedule
+    } catch (err) {
+        return false; // Can't find location
+    }
 }
 
 function deleteSchedule(id, isChannel = false) {
@@ -697,40 +758,58 @@ function runWeatherSchedule() {
         let channels = scheduleDB.getData('/channels');
         if (Object.keys(channels).length) {
             for (var channelid in channels) {
-                let channel_location = channels[channelid].location;
-                if (currentHour < 12) { // Then return today weather broadcast
-                    fetchCurrentWeather(channel_location, unit)
-                        .then((data) => {
-                            let weather = formatCurrentMessage(channel_location, unit, data);
-                            client.channels.get(channelid).send(weatherman_text);
-                            client.channels.get(channelid).send(weather);
-                        }).catch(err => {
-                            console.error(err);
-                        });
-                } else { // Then return next day
-                    fetchWeeklyWeather(channel_location, unit)
-                        .then((data) => {
-                            let weather_data = data.forecast;
-                            location = data.location || channel_location;
-
-                            let tomorrow_index = 1;
-                            for (let i = 0; i < weather_data.length; i++) { // Goes through 7 day forecast to find the index of tomorrow's forecast
-                                let date = weather_data[i].valid_date.replace(/-/g, '\/');
-                                let datetime = new Date(date);
-                                let dateFormatted = getFormattedDate(datetime);
-                                if (dateFormatted === tomorrow) {
-                                    tomorrow_index = i;
-                                    tomorrow = dateFormatted;
-                                }
-                            }
-                            let tomorrow_data = weather_data[tomorrow_index];
-                            let weather = formatTomorrowMessage(location, unit, tomorrow_data);
-                            client.channels.get(channelid).send(weatherman_text);
-                            client.channels.get(channelid).send(weather);
-                        }).catch(err => {
-                            console.error(err);
-                        });
+                let channel_locations = channels[channelid].location;
+                if (!channel_locations.length) {
+                    break;
                 }
+                if (typeof channel_locations === "string") {
+                    channel_locations = [channel_locations];
+                }
+
+                let channel_to_send = client.channels.get(channelid);
+                (async () => {
+                    let weather_message = weatherman_text + '\n';
+                    for (let [i, location] of channel_locations.entries()) {
+                        if (currentHour < 12) { // Then return today weather broadcast
+                            await fetchCurrentWeather(location, unit)
+                                .then((data) => {
+                                    weather_message += formatCurrentMessage(location, unit, data);
+                                    weather_message += `\n${"=".repeat(44)}\n`;
+                                }).catch(err => {
+                                    weather_message += err;
+                                    weather_message += `\n${"=".repeat(44)}\n`;
+                                });
+                        } else { // Then return next day
+                            await fetchWeeklyWeather(location, unit)
+                                .then((data) => {
+                                    let weather_data = data.forecast;
+                                    location = data.location || location;
+
+                                    let tomorrow_index = 1;
+                                    for (let i = 0; i < weather_data.length; i++) { // Goes through 7 day forecast to find the index of tomorrow's forecast
+                                        let date = weather_data[i].valid_date.replace(/-/g, '\/');
+                                        let datetime = new Date(date);
+                                        let dateFormatted = getFormattedDate(datetime);
+                                        if (dateFormatted === tomorrow) {
+                                            tomorrow_index = i;
+                                            tomorrow = dateFormatted;
+                                            break;
+                                        }
+                                    }
+                                    let tomorrow_data = weather_data[tomorrow_index];
+                                    weather_message += formatTomorrowMessage(location, unit, tomorrow_data);
+                                    weather_message += `\n${"=".repeat(44)}\n`;
+                                }).catch(err => {
+                                    weather_message += err;
+                                    weather_message += `\n${"=".repeat(44)}\n`;
+                                });
+                        }
+                        if (i % 3 === 0 || i === channel_locations.length - 1) { // Posts every 3 messages to lessen discord rate limit
+                            channel_to_send.send(weather_message);
+                            weather_message = '';
+                        }
+                    }
+                })();
             }
         }
 
@@ -740,7 +819,7 @@ function runWeatherSchedule() {
 }
 
 // at 7 AM (6) and 11 PM (22) => 0 6,22 * * *
-cron.schedule('* * * * *', () => {
+cron.schedule('0 6,22 * * *', () => {
     runWeatherSchedule();
 }, {
     timezone: "America/New_York"

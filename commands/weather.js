@@ -2,7 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
-var cron = require('node-cron');
+const cron = require('node-cron');
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -504,7 +504,7 @@ function deleteSchedule(id, isChannel = false) {
     }
 }
 
-function runSchedule() {
+function runWeatherSchedule() {
     let currentTime = new Date();
     let currentHour = currentTime.getHours();
     let unit = UNITS;
@@ -516,8 +516,6 @@ function runSchedule() {
 
     try {
         let accounts = scheduleDB.getData('/accounts');
-        let channels = scheduleDB.getData('/channels');
-
         if (Object.keys(accounts).length) {
             for (var userid in accounts) {
                 let user_location = accounts[userid].location;
@@ -528,7 +526,9 @@ function runSchedule() {
                             let weather = formatCurrentMessage(user_location, unit, data);
                             client.users.get(userid).send(weatherman_text);
                             client.users.get(userid).send(weather);
-                        }).catch(err => {});
+                        }).catch(err => {
+                            console.error(err);
+                        });
                 } else { // Then return next day
                     fetchWeeklyWeather(user_location, unit)
                         .then((data) => {
@@ -550,11 +550,19 @@ function runSchedule() {
                             let weather = formatTomorrowMessage(location, unit, tomorrow_data);
                             client.users.get(userid).send(weatherman_text);
                             client.users.get(userid).send(weather);
-                        }).catch(err => {});
+                        }).catch(err => {
+                            console.error(err);
+                        });
                 }
             }
         }
 
+    } catch (error) {
+        console.error(error);
+    }
+
+    try {
+        let channels = scheduleDB.getData('/channels');
         if (Object.keys(channels).length) {
             for (var channelid in channels) {
                 let channel_location = channels[channelid].location;
@@ -564,7 +572,9 @@ function runSchedule() {
                             let weather = formatCurrentMessage(channel_location, unit, data);
                             client.channels.get(channelid).send(weatherman_text);
                             client.channels.get(channelid).send(weather);
-                        }).catch(err => { console.log(err); });
+                        }).catch(err => {
+                            console.error(err);
+                        });
                 } else { // Then return next day
                     fetchWeeklyWeather(channel_location, unit)
                         .then((data) => {
@@ -585,21 +595,24 @@ function runSchedule() {
                             let weather = formatTomorrowMessage(location, unit, tomorrow_data);
                             client.channels.get(channelid).send(weatherman_text);
                             client.channels.get(channelid).send(weather);
-                        }).catch(err => { console.log(err); });
+                        }).catch(err => {
+                            console.error(err);
+                        });
                 }
             }
         }
 
     } catch (error) {
-
+        console.error(error);
     }
 }
 
-// at 7 AM and 10 PM (22) => 0 7,22 * * *
-cron.schedule('0 7,22 * * *', () => {
-    runSchedule();
+// at 7 AM (6) and 11 PM (22) => 0 6,22 * * *
+cron.schedule('* 6,22 * * *', () => {
+    runWeatherSchedule();
 }, {
     timezone: "America/New_York"
 });
+
 
 module.exports = WEATHER_COMMANDS;

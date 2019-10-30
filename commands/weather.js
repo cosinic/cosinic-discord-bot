@@ -648,9 +648,9 @@ function removeSchedule(id, location, isChannel = false) {
                 }
                 let toRemoveIdx = locations.indexOf(location);
                 if (toRemoveIdx > -1) {
-                    let new_locations = locations.splice(toRemoveIdx, 1);
+                    locations.splice(toRemoveIdx, 1);
                     scheduleDB.push(`/${path}/${id}`, {
-                        "location": new_locations
+                        "location": locations
                     });
                     return true;
                 } else {

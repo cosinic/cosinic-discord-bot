@@ -74,13 +74,21 @@ var CURRENCY_COMMANDS = {
     displayBalance(userId, username, received) {
         let balance = getBalance(userId);
         let message = `${EMOJI_MONEY} ${username} has ${balance} ${CONSTANTS.formatCurrency(balance)}`;
-        received.channel.send(message);
+        received.channel.send(message)
+            .then(msg => {
+                queueDeleteMessage(msg);
+                queueDeleteMessage(received);
+            });
     },
     displayAverageEconomy(received) {
         let avgEcon = CONSTANTS.sanitizeAmount(getAverageEconomy());
         let poorCount = getPovertyCount();
         let message = `${EMOJI_DOLLAR} The average economy is: ${avgEcon} ${CONSTANTS.formatCurrency(avgEcon)}. Number of users receiving economy stamps: ${poorCount}`;
-        received.channel.send(message);
+        received.channel.send(message)
+            .then(msg => {
+                queueDeleteMessage(msg);
+                queueDeleteMessage(received);
+            });
     },
     payUser(userId, username, args, received) {
         if (args[0] && args[1]) {
@@ -351,6 +359,31 @@ function checkEconomy() {
     } catch (error) {
         console.error(error);
     }
+}
+
+async function queueDeleteMessage(message) {
+    const wait_seconds = 30;
+    const wait_milliseconds = wait_seconds * 1000;
+
+    const delay = ms => {
+        return new Promise(resolve => setTimeout(resolve, ms))
+    }
+
+    const delayMessage = cb => {
+        return delay(wait_milliseconds).then(() => {
+            cb();
+        });
+    }
+
+    return await delayMessage(() => {
+        if (message.deletable) {
+            message.delete()
+                .then(msg => { return true; })
+                .catch(console.error);
+        } else {
+            return false;
+        }
+    });
 }
 
 // Run every hour

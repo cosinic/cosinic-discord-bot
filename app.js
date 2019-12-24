@@ -44,6 +44,7 @@ const reddit_commands = require('./commands/reddit.js');
 const weather_commands = require('./commands/weather.js');
 const roll_commands = require('./commands/diceroll.js');
 const BANK = require('./currency/currency.js');
+const moderation_commands = require('./commands/moderation');
 
 function processCommand(receivedMessage) {
     let fullCommand = receivedMessage.content.substr(1) // Remove the leading exclamation mark
@@ -82,6 +83,10 @@ function processCommand(receivedMessage) {
             break;
         case 'cc':
             BANK.handleCommand(arguments, receivedMessage);
+            break;
+        case 'mod':
+        case 'mode': // Because my brain keeps typing mode
+            moderation_commands.handleCommand(arguments, receivedMessage);
             break;
         default:
             break;

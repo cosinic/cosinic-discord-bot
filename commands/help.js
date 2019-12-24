@@ -32,6 +32,11 @@ var HELP_COMMANDS = {
                     help_text += "\nE.G. `!cc pay @bob 5`";
                     help_text += "\nNote: You can DM the Bot `!cc balance` if you'd like to know your balance in private.";
                     break;
+                case 'moderation':
+                    help_text = "You can use this command like: `!mod [del] (bot) [AMOUNT]`";
+                    help_text += "\nE.G. `!mod del 5` will delete 5 newest messages that you wrote.";
+                    help_text += "\nE.G. `!mod del bot 5` will delete the newest 5 messages that the bot sent.";
+                    break;
                 default:
                     break;
             }

@@ -820,7 +820,7 @@ function runWeatherSchedule() {
 
 //Daylight Savings: at 7 AM (6) and 11 PM (22) => 0 6,22 * * *
 //Daylight Savings End: 0 7,23 * * *
-cron.schedule('0 7,23 * * *', () => {
+cron.schedule('0 6,22 * * *', () => {
     runWeatherSchedule();
 }, {
     timezone: "America/New_York"

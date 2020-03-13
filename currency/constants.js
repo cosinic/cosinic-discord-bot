@@ -12,7 +12,7 @@ const CONSTANTS = {
         "POVERTY_RATE": 0.15 // 15% of bank goes to the poverty before freedom dividends
     },
     "INVENTORY": {
-        "bamboozle": 1000
+        "bamboozle": 500000
     },
     "PUNISH_COUNTS": {
         "bamboozle": 5

@@ -823,7 +823,7 @@ function createWeatherScheduleTask(schedule, timezone = 'America/New_York') {
   return cron.schedule(schedule, runWeatherSchedule, {
     scheduled: false,
     timezone: timezone
-  }
+  });
 }
 
 function getCorrectDstTask(timezone = 'America/New_York') {
@@ -846,6 +846,6 @@ const dst_task = createWeatherScheduleTask('0 7,23 * * *');
 var current_task = getCorrectDstTask();
 
 // Run this a minute before the hour hits. If we need to swap tasks and swap right at the hour, the new task will miss the hour
-cron.schedule('59 * * * *'), swapDstTasksIfNeeded);
+cron.schedule('59 * * * *', swapDstTasksIfNeeded);
 
 module.exports = WEATHER_COMMANDS;

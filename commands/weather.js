@@ -3,6 +3,7 @@ const axios = require('axios');
 var JsonDB = require('node-json-db').JsonDB;
 var JsonDBConfig = require('node-json-db/dist/lib/JsonDBConfig').Config;
 const cron = require('node-cron');
+const moment = require('moment-timezone');
 
 const WEATHER_API = process.env.WEATHER_API;
 
@@ -818,12 +819,33 @@ function runWeatherSchedule() {
     }
 }
 
+function createWeatherScheduleTask(schedule, timezone = 'America/New_York') {
+  return cron.schedule(schedule, runWeatherSchedule, {
+    scheduled: false,
+    timezone: timezone
+  }
+}
+
+function getCorrectDstTask(timezone = 'America/New_York') {
+  return moment.tz(timezone).isDST() ? dst_task : nondst_task;
+}
+
+function swapDstTasksIfNeeded() {
+  const new_task = getCorrectDstTask();
+  if (current_task !== new_task) {
+    current_task.stop();
+    new_task.start();
+    current_task = new_task;
+  }
+}
+
 //Daylight Savings: at 7 AM (6) and 11 PM (22) => 0 6,22 * * *
 //Daylight Savings End: 0 7,23 * * *
-cron.schedule('0 7,23 * * *', () => {
-    runWeatherSchedule();
-}, {
-    timezone: "America/New_York"
-});
+const nondst_task = createWeatherScheduleTask('0 6,22 * * *');
+const dst_task = createWeatherScheduleTask('0 7,23 * * *');
+var current_task = getCorrectDstTask();
+
+// Run this a minute before the hour hits. If we need to swap tasks and swap right at the hour, the new task will miss the hour
+cron.schedule('59 * * * *'), swapDstTasksIfNeeded);
 
 module.exports = WEATHER_COMMANDS;

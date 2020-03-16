@@ -1,5 +1,14 @@
 # Cosinic Discord Bot
 
+## How to Use
+1. Do `npm install` to install dependencies
+2. Copy `.env.example` and rename to `.env` and fill in necessary fields to make bot run.
+    - Mandatory fields are:
+        - BOT_SECRET=DISCORD_SECRET_KEY
+        - NODE_ENV=DEVELOPMENT
+    - Other variables need to be filled in depending on which API you are testing.
+3. Do `node app.js` to run the bot.
+
 ## To Do
 #### Reddit Scheduler
 - [x] ~~Function for instant posting request: `!reddit aww now top`~~ *(10/12/2019)*

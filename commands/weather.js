@@ -820,32 +820,34 @@ function runWeatherSchedule() {
 }
 
 function createWeatherScheduleTask(schedule, timezone = 'America/New_York') {
-  return cron.schedule(schedule, runWeatherSchedule, {
-    scheduled: false,
-    timezone: timezone
-  });
+    return cron.schedule(schedule, runWeatherSchedule, {
+        scheduled: false,
+        timezone: timezone
+    });
 }
 
-function getCorrectDstTask(timezone = 'America/New_York') {
-  return moment.tz(timezone).isDST() ? dst_task : nondst_task;
+function getCorrectDst(timezone = 'America/New_York') {
+    return moment.tz(timezone).isDST() ? dst_schedule : nondst_schedule;
 }
 
 function swapDstTasksIfNeeded() {
-  const new_task = getCorrectDstTask();
-  if (current_task !== new_task) {
-    current_task.stop();
-    new_task.start();
-    current_task = new_task;
-  }
+    const dst_now = getCorrectDst();
+    if (current_dst !== dst_now) {
+        current_dst = dst_now;
+        current_task.destroy();
+        console.log("Adjusting to new daylight savings.");
+        current_task = createWeatherScheduleTask(dst_now);
+    }
 }
 
 //Daylight Savings: at 7 AM (6) and 11 PM (22) => 0 6,22 * * *
 //Daylight Savings End: 0 7,23 * * *
-const nondst_task = createWeatherScheduleTask('0 6,22 * * *');
-const dst_task = createWeatherScheduleTask('0 7,23 * * *');
-var current_task = getCorrectDstTask();
+const nondst_schedule = '0 6,22 * * *';
+const dst_schedule = '0 7,23 * * *';
+let current_dst = getCorrectDst();
+let current_task = createWeatherScheduleTask(current_dst);
 
-// Run this a minute before the hour hits. If we need to swap tasks and swap right at the hour, the new task will miss the hour
-cron.schedule('59 * * * *', swapDstTasksIfNeeded);
+// Run this every minute. It will account for it incase server time doesn't hit at 59 min for some reason.
+cron.schedule('* * * * *', swapDstTasksIfNeeded);
 
 module.exports = WEATHER_COMMANDS;

@@ -18,6 +18,7 @@
     "snoowrap": "^1.20.0"
   },
   "dependencies": {
-    "moment-timezone": "^0.5.28"
+    "moment-timezone": "^0.5.28",
+    "minimist": ">=1.2.2"
   }
 }

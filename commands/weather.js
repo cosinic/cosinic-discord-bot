@@ -844,8 +844,8 @@ function swapDstTasksIfNeeded() {
 
 //Daylight Savings: at 7 AM (6) and 11 PM (22) => 0 6,22 * * *
 //Daylight Savings End: 0 7,23 * * *
-const nondst_schedule = '0 6,22 * * *';
-const dst_schedule = '0 7,23 * * *';
+const nondst_schedule = '0 7,23 * * *';
+const dst_schedule = '0 6,22 * * *';
 let current_dst = getCorrectDst();
 let current_task = createWeatherScheduleTask(current_dst);
 

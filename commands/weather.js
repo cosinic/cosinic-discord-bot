@@ -820,7 +820,9 @@ function runWeatherSchedule() {
 }
 
 function createWeatherScheduleTask(schedule, timezone = 'America/New_York') {
-    return cron.schedule(schedule, runWeatherSchedule, {
+    return cron.schedule(schedule, () => {
+        runWeatherSchedule();
+    }, {
         scheduled: false,
         timezone: timezone
     });

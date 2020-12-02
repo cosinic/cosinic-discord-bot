@@ -388,7 +388,7 @@ async function queueDeleteMessage(message) {
 
 // Run every hour
 cron.schedule('0 * * * *', () => {
-    checkEconomy();
+    // checkEconomy();
 }, {
     timezone: "America/New_York"
 });

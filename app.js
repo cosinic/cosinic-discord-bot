@@ -40,6 +40,7 @@ global.HELP_COMMANDS = help_commands; // Help commands into global scope
 
 const riot_commands = require('./commands/riot.js');
 const stock_commands = require('./commands/stock.js');
+const crypto_commands = require('./commands/crypto.js');
 const reddit_commands = require('./commands/reddit.js');
 const weather_commands = require('./commands/weather.js');
 const roll_commands = require('./commands/diceroll.js');
@@ -66,6 +67,10 @@ function processCommand(receivedMessage) {
         case 'stonk':
         case 'stonks':
             stock_commands.getStonk(arguments, receivedMessage);
+            break;
+        case 'crypto':
+        case 'crypt':
+            crypto_commands.getCurrency(arguments, receivedMessage);
             break;
         case 'reddit':
         case 'redsched':

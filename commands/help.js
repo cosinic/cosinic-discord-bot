@@ -11,6 +11,9 @@ var HELP_COMMANDS = {
                 case 'stock':
                     help_text = "You can use this command like: `!stock [TICKER] (optional)[info|NUM_MONTHS]`";
                     break;
+                case 'crypto':
+                    help_text = "You can use this command like: `!crypto [SYMBOL] (optional)[info]`";
+                    break;
                 case 'reddit':
                     help_text = `You can use this command like: \`!reddit [SUBREDDIT] [stop|now|time in HH:MM format 24 hour standard(multiple times separated by commas)] (optional:default=hot)[hot|top|rising]\`.`;
                     help_text += `\nE.G: \`!reddit funny 17:00 top\` will post the top reddit post from /r/funny at 5:00PM EST daily.`;

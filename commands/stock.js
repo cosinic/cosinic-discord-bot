@@ -26,18 +26,37 @@ var STOCK_COMMANDS = {
 
                         let change_percent = stock.changePercent * 100;
 
-                        let stockInfo = `${stock.companyName} **(${stock.symbol})** is trading at **$${stock.latestPrice.toLocaleString('en')}** (${change_percent > 0 ? "+" : ""}${change_percent.toFixed(2)}%) \n`;
+                        const isMarketOpen = stock.isUSMarketOpen;
+
+                        let stockInfo = `${stock.companyName} **(${stock.symbol})** ${isMarketOpen ? "is trading at" : "closed at"} **$${stock.latestPrice.toLocaleString('en')}** (${change_percent > 0 ? "+" : ""}${change_percent.toFixed(2)}%) \n`;
                         if (stock.open)
                             stockInfo += `It opened at $${stock.open.toLocaleString('en')}. \n`;
-                        if (stock.close)
+                        if (stock.close && !isMarketOpen)
                             stockInfo += `It closed at at $${stock.close.toLocaleString('en')}. \n`;
                         if (stock.low && stock.high)
                             stockInfo += `Today's low: $${stock.low.toLocaleString('en')}. Today's high: $${stock.high.toLocaleString('en')}. \n`;
-                        stockInfo += `*US Market is currently ${stock.isUSMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
+
+                        if (!isMarketOpen && stock.extendedPrice) {
+                            let after_hour_time = new Date(stock.extendedPriceTime);
+                            let after_hour_change_percent = stock.extendedChangePercent * 100;
+                            stockInfo += `After Hours Price: **$${stock.extendedPrice.toLocaleString('en')}** (${after_hour_change_percent > 0 ? "+" : ""}${after_hour_change_percent.toFixed(2)}%). \n`;
+                            updated_time = after_hour_time.toLocaleDateString() + ' ' + after_hour_time.toLocaleTimeString();
+                        }
+                        
+                        stockInfo += `*US Market is currently ${isMarketOpen ? "open" : "closed"}. Last updated ${update_time}.*`;
 
                         received.channel.send(stockInfo);
                     }).catch(error => {
-                        console.log(error);
+                        if (error.response && error.response.status) {
+                            if (error.response.status === 404) { // Ticker not found
+                                let errorText = `The stock with ticker **${TICKER}** was not found.`
+                                received.channel.send(errorText);
+                            } else {
+                                console.log(error);
+                            }
+                        } else {
+                            console.log('Error fetching stock data');
+                        }
                     });
             } else {
                 let optional_args = args[1];

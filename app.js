@@ -46,6 +46,7 @@ const weather_commands = require('./commands/weather.js');
 const roll_commands = require('./commands/diceroll.js');
 const BANK = require('./currency/currency.js');
 const moderation_commands = require('./commands/moderation');
+const reminder_commands = require('./commands/reminder');
 
 function processCommand(receivedMessage) {
     let fullCommand = receivedMessage.content.substr(1) // Remove the leading exclamation mark
@@ -92,6 +93,10 @@ function processCommand(receivedMessage) {
         case 'mod':
         case 'mode': // Because my brain keeps typing mode
             moderation_commands.handleCommand(arguments, receivedMessage);
+            break;
+        case 'remind':
+        case 'remindme':
+            reminder_commands.handleCommand(arguments, receivedMessage);
             break;
         default:
             break;

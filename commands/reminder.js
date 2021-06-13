@@ -13,8 +13,14 @@ const REMINDER_LIMIT = 9;
 /**
  * Reminder JsonDB Layout
  * {
+ * * cron {
+ * * * year {
+ * * * * month {
+ * * * * * day [reminderId]
+ * * * * }
+ * * *}
+ * * }
  * * reminders [ ID: {
- * * * id
  * * * time
  * * * message
  * * * done
@@ -229,8 +235,8 @@ function getReminderById(reminderId) {
 function createReminder(userId, guildId, channelId, time, message) {
     try {
         const newId = uuidv4();
+        const reminderDate = new Date(time);
         const reminder = {
-            id: newId,
             userId: userId,
             guildId: guildId,
             channelId: channelId,
@@ -239,10 +245,27 @@ function createReminder(userId, guildId, channelId, time, message) {
             done: false
         };
         reminders.push('/reminders/' + newId, reminder, true);
+        addReminderToCron(reminderDate, newId);
         return newId;
     } catch (err) {
         console.error(err);
         return false;
+    }
+}
+
+/**
+ * Adds reminder to cron list so it's read to be reminded during that day.
+ * @param {*} reminderDate | javascript datetime
+ * @param {*} reminderId 
+ */
+function addReminderToCron(reminderDate, reminderId) {
+    try {
+        const existing = reminders.getData(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}`);
+        if (existing.length) { // todo: Existing doesn't seem to be appending
+            reminders.push(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[]`, reminderId, true);
+        }
+    } catch (err) {
+        reminders.push(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[0]`, reminderId, true);
     }
 }
 
@@ -265,10 +288,37 @@ function setNewReminder(userId, guildId = null, channelId, time, message) {
     }
 }
 
-function deleteReminder(userId, reminderId) {
+function deleteReminder(reminderId) {
     try {
+        const reminder = reminders.getData('/reminders/' + reminderId);
+        if (reminder !== null && reminder !== undefined) {
+            console.log("Deleting Reminder:", reminderId);
+            // Delete from cron
+            const reminderDate = new Date(reminder.time);
+            const crons = reminders.getData(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}`);
+            const cronReminderIdx = crons.findIndex(x => x === reminderId);
+            if (cronReminderIdx > -1)
+                reminders.delete(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[${cronReminderIdx}]`);
 
+            if (reminder.guildId !== null) {
+                // Delete from guild
+                const gReminders = reminders.getData(`/guilds/${reminder.guildId}/${reminder.userId}/reminders`);
+                const gReminderIdx = gReminders.findIndex(x => x === reminderId);
+                if (gReminderIdx > -1)
+                    reminders.delete(`/guilds/${reminder.guildId}/${reminder.userId}/reminders[${gReminderIdx}]`);
+            } else {
+                // Delete from user
+                const uReminders = reminders.getData(`/users/${reminder.userId}/reminders`);
+                const uReminderIdx = uReminders.findIndex(x => x === reminderId);
+                if (uReminderIdx > -1)
+                    reminders.delete(`/users/${reminder.userId}/reminders[${uReminderIdx}]`);
+            }
+            // Delete from reminders
+            reminders.delete(`/reminders/${reminderId}`);
+
+        }
     } catch (err) {
+        console.error(err);
 
     }
 }
@@ -300,14 +350,26 @@ async function queueDeleteMessage(message) {
     });
 }
 
+function sendReminderToChannel(rid, r) {
+    client.channels.get(r.channelId).send(r.message).then(msg => {
+        deleteReminder(rid);
+    });
+}
+
 function SEND_REMINDERS() {
     try {
-        const REMINDERS = reminders.getData('/reminders');
-        for(const r in REMINDERS) {
-            const current_reminder = REMINDERS[r];
-            console.log(current_reminder);
+        const reminderData = reminders.getData('/');
+        if (typeof reminderData['reminders'] === 'undefined') {
+            console.log("No Reminders in DB");
+        } else {
+            const REMINDERS = reminders.getData('/reminders');
+            for (const rid in REMINDERS) {
+                const current_reminder = REMINDERS[rid];
+                console.log(current_reminder);
+                deleteReminder(rid);
+            }
         }
-    } catch(err) {
+    } catch (err) {
         console.error(err);
     }
 }

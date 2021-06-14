@@ -40,6 +40,12 @@ var HELP_COMMANDS = {
                     help_text += "\nE.G. `!mod del 5` will delete 5 newest messages that you wrote.";
                     help_text += "\nE.G. `!mod del bot 5` will delete the newest 5 messages that the bot sent.";
                     break;
+                case 'reminder':
+                    help_text = "You can use this command like: `!remindme TIME_OPTION \"YOUR_MESSAGE_IN_DOUBLE_QUOTES\"`";
+                    help_text += "\nE.G. `!remindme tonight \"Custom Valorant at 10 PM\"`";
+                    help_text += "\nE.G. `!remind \"@Valorant Ivan's match is on\" tomorrow at 5 PM`";
+                    help_text += "\nYou can also see and delete your reminders by typing `!remind (ls|show|list|del|delete)`";
+                    break;
                 default:
                     break;
             }

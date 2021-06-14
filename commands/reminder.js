@@ -260,12 +260,14 @@ function createReminder(userId, guildId, channelId, time, message) {
  */
 function addReminderToCron(reminderDate, reminderId) {
     try {
-        const existing = reminders.getData(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}`);
-        if (existing.length) { // todo: Existing doesn't seem to be appending
-            reminders.push(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[]`, reminderId, true);
+        const existing = reminders.getData(`/cron/y${reminderDate.getFullYear()}/m${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}`);
+        if (existing.length) {
+            reminders.push(`/cron/y${reminderDate.getFullYear()}/m${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[]`, reminderId, true);
+        } else {
+            throw new Error('No Reminders in Array, create new one');
         }
     } catch (err) {
-        reminders.push(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[0]`, reminderId, true);
+        reminders.push(`/cron/y${reminderDate.getFullYear()}/m${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[0]`, reminderId, true);
     }
 }
 
@@ -295,10 +297,10 @@ function deleteReminder(reminderId) {
             console.log("Deleting Reminder:", reminderId);
             // Delete from cron
             const reminderDate = new Date(reminder.time);
-            const crons = reminders.getData(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}`);
+            const crons = reminders.getData(`/cron/y${reminderDate.getFullYear()}/m${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}`);
             const cronReminderIdx = crons.findIndex(x => x === reminderId);
             if (cronReminderIdx > -1)
-                reminders.delete(`/cron/${reminderDate.getFullYear()}/${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[${cronReminderIdx}]`);
+                reminders.delete(`/cron/y${reminderDate.getFullYear()}/m${reminderDate.getMonth() + 1}/d${reminderDate.getDate()}[${cronReminderIdx}]`);
 
             if (reminder.guildId !== null) {
                 // Delete from guild
@@ -365,8 +367,6 @@ function SEND_REMINDERS() {
             const REMINDERS = reminders.getData('/reminders');
             for (const rid in REMINDERS) {
                 const current_reminder = REMINDERS[rid];
-                console.log(current_reminder);
-                deleteReminder(rid);
             }
         }
     } catch (err) {

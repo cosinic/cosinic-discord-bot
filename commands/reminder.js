@@ -5,7 +5,7 @@ const JsonDBConfig = require("node-json-db/dist/lib/JsonDBConfig").Config;
 const cron = require("node-cron");
 const {v4: uuidv4} = require("uuid");
 
-const reminders = new JsonDB(
+const REMINDERS = new JsonDB(
     new JsonDBConfig("db/reminders", true, false, "/")
 );
 const REMINDER_LIMIT = 9;
@@ -42,6 +42,19 @@ const REMINDER_LIMIT = 9;
  * }
  */
 
+const REMINDER_EMOJIS = {
+    0: "0⃣",
+    1: "1⃣",
+    2: "2⃣",
+    3: "3⃣",
+    4: "4⃣",
+    5: "5⃣",
+    6: "6⃣",
+    7: "7⃣",
+    8: "8⃣",
+    9: "9⃣",
+};
+
 const REMINDER_COMMANDS = {
     handleCommand(args, received) {
         if (args.length) {
@@ -53,10 +66,10 @@ const REMINDER_COMMANDS = {
             switch (args[0]) {
                 case "delete":
                 case "del":
-                    this.deleteReminder(args.slice(1), received);
-                    return;
                 case "list":
+                case "ls":
                 case "show":
+                case "get":
                     this.getReminders(received);
                     return;
                 default:
@@ -75,8 +88,91 @@ const REMINDER_COMMANDS = {
     getReminders(received) {
         const userId = received.author.id;
         const guildId = received.guild ? received.guild.id : null;
-        const reminders = getReminders(userId, guildId);
-        console.log(reminders);
+        const rems = getReminders(userId, guildId);
+        if (rems.length) {
+            const userReminders = [];
+            for (const rid of rems) {
+                const rem = getReminderById(rid);
+                userReminders.push({
+                    id: rid,
+                    ...rem,
+                });
+            }
+            received.channel
+                .send(
+                    "**React with the numbered emoji to delete the corresponding scheduled reminder.**"
+                )
+                .then((iMsg) => {
+                    queueDeleteMessage(iMsg);
+                });
+            const formattedReminderString = formatReminders(userReminders);
+            received.channel.send(formattedReminderString).then(async (msg) => {
+                try {
+                    for (let i = 0; i < userReminders.length; i++) {
+                        await msg.react(REMINDER_EMOJIS[i]);
+                    }
+                    await msg.react("❌");
+                    const filter = (reaction, user) => {
+                        return (
+                            [
+                                "0⃣",
+                                "1⃣",
+                                "2⃣",
+                                "3⃣",
+                                "4⃣",
+                                "5⃣",
+                                "6⃣",
+                                "7⃣",
+                                "8⃣",
+                                "9⃣",
+                                "❌",
+                            ].includes(reaction.emoji.name) &&
+                            user.id === userId
+                        );
+                    };
+                    msg.awaitReactions(filter, {
+                        max: 1,
+                        time: 30000,
+                        errors: ["time"],
+                    })
+                        .then((collected) => {
+                            const reaction = collected.first();
+                            if (reaction.emoji.name === "❌") { // Then cancel and remove list
+                                queueDeleteMessage(received);
+                                msg.delete();
+                                return;
+                            }
+                            const reactedNum = parseInt(reaction.emoji.name);
+                            if (!isNaN(reactedNum)) {
+                                const reminderToDelete =
+                                    userReminders[reactedNum];
+                                deleteReminder(reminderToDelete.id);
+                                received.channel
+                                    .send(
+                                        `Okay, deleting your reminder scheduled for: *${new Date(
+                                            reminderToDelete.time
+                                        ).toLocaleDateString()}* about: \`${
+                                            reminderToDelete.message
+                                        }\``
+                                    )
+                                    .then((cMsg) => {
+                                        queueDeleteMessage(cMsg);
+                                    });
+                            }
+                            queueDeleteMessage(msg);
+                            queueDeleteMessage(received);
+                        })
+                        .catch((collected) => {
+                            queueDeleteMessage(received);
+                            msg.delete();
+                        });
+                } catch (err) {
+                    console.error("Emojis failed to react:", err);
+                }
+            });
+        } else {
+            this.sendErrorMessage(received, "You have no scheduled reminders.");
+        }
     },
     setReminder(args, received) {
         const userId = received.author.id;
@@ -86,7 +182,7 @@ const REMINDER_COMMANDS = {
         // First check (or create) reminders to make sure they're under the limit
         const currentReminders = getReminders(userId, guildId);
         if (currentReminders.length > REMINDER_LIMIT) {
-            const errorMessage = `Sorry but you can only set ${REMINDER_LIMIT} limits per group, per user.`;
+            const errorMessage = `Sorry but you can only schedule ${REMINDER_LIMIT} reminders in a server.`;
             this.sendErrorMessage(received, errorMessage);
             return;
         }
@@ -101,7 +197,7 @@ const REMINDER_COMMANDS = {
                 firstIndexMessage,
                 lastIndexMessage + 1
             );
-            const REMINDER_MESSAGE = rawMessage.join(" ").replace(/\"/g, "");
+            const REMINDER_MESSAGE = rawMessage.join(" ").replace(/\"/g, "").trim();
 
             // Don't need to get the mentioned ID's since the received message automatically translates to <@id>
             const messageMentions = received.mentions;
@@ -131,9 +227,6 @@ const REMINDER_COMMANDS = {
                 const dateTimeStart = parsedDateTime.start;
                 const jsDate = dateTimeStart.date();
 
-                console.log(dateTimeStart);
-                console.log(jsDate);
-
                 const newReminder = setNewReminder(
                     userId,
                     guildId,
@@ -142,7 +235,14 @@ const REMINDER_COMMANDS = {
                     REMINDER_MESSAGE
                 );
                 if (newReminder !== false) {
-                    console.log(newReminder);
+                    received.channel
+                        .send(
+                            `Ok, I'll remind you on **${jsDate.toLocaleDateString()} at ${jsDate.toLocaleTimeString()}** about *${REMINDER_MESSAGE}*`
+                        )
+                        .then((msg) => {
+                            queueDeleteMessage(msg);
+                            queueDeleteMessage(received);
+                        });
                 } else {
                     const errorMessage = `Something went wrong while creating this reminder. Please try again.`;
                     this.sendErrorMessage(received, errorMessage);
@@ -158,94 +258,55 @@ const REMINDER_COMMANDS = {
             return;
         }
     },
-    deleteReminder(args, received) {
-        const userId = received.author.id;
-        const guildId = received.guild ? received.guild.id : null;
-
-        if (args[0]) {
-            let toDeleteAmount = args[0];
-            let toDeleteId = userId;
-
-            const channel = received.channel;
-
-            if (
-                channel.type === "text" ||
-                channel.type === "dm" ||
-                channel.type === "group"
-            ) {
-                if (toDeleteId === userId) {
-                    toDeleteAmount++; // Because it counts the sent !mod del command as well.
-                }
-                channel
-                    .fetchMessages()
-                    .then((messages) => {
-                        const toDeleteMessages = messages
-                            .filter((m) => m.author.id === toDeleteId)
-                            .first(toDeleteAmount);
-                        if (toDeleteMessages.length) {
-                            channel
-                                .bulkDelete(toDeleteMessages)
-                                .then((messages) => {
-                                    const deleteCount =
-                                        toDeleteId === userId
-                                            ? messages.size - 1
-                                            : messages.size;
-                                    const doneMessage = `<@${userId}> deleted ${deleteCount} ${
-                                        deleteCount === 1
-                                            ? "message"
-                                            : "messages"
-                                    } by <@${toDeleteId}>.`;
-                                    received.channel
-                                        .send(doneMessage)
-                                        .then((msg) => {
-                                            if (!received.deleted) {
-                                                queueDeleteMessage(received);
-                                            }
-                                            queueDeleteMessage(msg);
-                                        });
-                                })
-                                .catch(console.error);
-                        } else {
-                            const doneMessage = `No messages found to delete. Bot can only delete messages up to 2 weeks old.`;
-                            this.sendErrorMessage(received, doneMessage);
-                        }
-                    })
-                    .catch(console.error);
-            }
-        } else {
-            received.channel.send("Invalid format.");
-            HELP_COMMANDS.help("reminder", received);
-        }
-    },
 };
 
 function getReminders(userId, guildId = null) {
     try {
         if (guildId !== null) {
-            return reminders.getData(`/guilds/${guildId}/${userId}/reminders`);
+            return REMINDERS.getData(`/guilds/${guildId}/${userId}/reminders`);
         }
-        return reminders.getData(`/users/${userId}/reminders`);
+        return REMINDERS.getData(`/users/${userId}/reminders`);
     } catch (err) {
         if (guildId !== null) {
-            reminders.push(`/guilds/${guildId}/${userId}`, {
+            REMINDERS.push(`/guilds/${guildId}/${userId}`, {
                 reminders: [],
             });
-            return reminders.getData(`/guilds/${guildId}/${userId}`);
+            return REMINDERS.getData(`/guilds/${guildId}/${userId}`);
         }
-        reminders.push("/users/" + userId, {
+        REMINDERS.push("/users/" + userId, {
             reminders: [],
         });
-        return reminders.getData(`/users/${userId}`);
+        return REMINDERS.getData(`/users/${userId}`);
     }
 }
 
 function getReminderById(reminderId) {
     try {
-        return reminders.getData("/reminders/" + reminderId);
+        return REMINDERS.getData("/reminders/" + reminderId);
     } catch (err) {
         console.error(err);
         return false;
     }
+}
+
+/**
+ *
+ * @param {*} reminders | array of Reminders
+ */
+function formatReminders(reminders) {
+    if (reminders.length) {
+        let formatted = "```md\n";
+        for (let i = 0; i < reminders.length; i++) {
+            const rem = reminders[i];
+            const remTime = new Date(rem.time);
+            formatted += `${i}. (${remTime.toLocaleDateString()} at ${remTime.toLocaleTimeString()}) "${
+                rem.message
+            }"\n`;
+        }
+        formatted += "```";
+        return formatted;
+    }
+    return "";
 }
 
 /**
@@ -268,7 +329,7 @@ function createReminder(userId, guildId, channelId, time, message) {
             message: message,
             done: false,
         };
-        reminders.push("/reminders/" + newId, reminder, true);
+        REMINDERS.push("/reminders/" + newId, reminder, true);
         addReminderToCron(reminderDate, newId);
         return newId;
     } catch (err) {
@@ -284,13 +345,13 @@ function createReminder(userId, guildId, channelId, time, message) {
  */
 function addReminderToCron(reminderDate, reminderId) {
     try {
-        const existing = reminders.getData(
+        const existing = REMINDERS.getData(
             `/cron/y${reminderDate.getFullYear()}/m${
                 reminderDate.getMonth() + 1
             }/d${reminderDate.getDate()}`
         );
         if (existing.length) {
-            reminders.push(
+            REMINDERS.push(
                 `/cron/y${reminderDate.getFullYear()}/m${
                     reminderDate.getMonth() + 1
                 }/d${reminderDate.getDate()}[]`,
@@ -301,7 +362,7 @@ function addReminderToCron(reminderDate, reminderId) {
             throw new Error("No Reminders in Array, create new one");
         }
     } catch (err) {
-        reminders.push(
+        REMINDERS.push(
             `/cron/y${reminderDate.getFullYear()}/m${
                 reminderDate.getMonth() + 1
             }/d${reminderDate.getDate()}[0]`,
@@ -322,13 +383,13 @@ function setNewReminder(userId, guildId = null, channelId, time, message) {
         );
         if (reminderId) {
             if (guildId !== null) {
-                reminders.push(
+                REMINDERS.push(
                     `/guilds/${guildId}/${userId}/reminders[]`,
                     reminderId
                 );
                 return getReminderById(reminderId);
             }
-            reminders.push(`/users/${userId}/reminders[]`, reminderId);
+            REMINDERS.push(`/users/${userId}/reminders[]`, reminderId);
             return getReminderById(reminderId);
         } else {
             throw new Error("Creating reminder failed");
@@ -341,19 +402,19 @@ function setNewReminder(userId, guildId = null, channelId, time, message) {
 
 function deleteReminder(reminderId) {
     try {
-        const reminder = reminders.getData("/reminders/" + reminderId);
+        const reminder = REMINDERS.getData("/reminders/" + reminderId);
         if (reminder !== null && reminder !== undefined) {
             console.log("Deleting Reminder:", reminderId);
             // Delete from cron
             const reminderDate = new Date(reminder.time);
-            const crons = reminders.getData(
+            const crons = REMINDERS.getData(
                 `/cron/y${reminderDate.getFullYear()}/m${
                     reminderDate.getMonth() + 1
                 }/d${reminderDate.getDate()}`
             );
             const cronReminderIdx = crons.findIndex((x) => x === reminderId);
             if (cronReminderIdx > -1)
-                reminders.delete(
+                REMINDERS.delete(
                     `/cron/y${reminderDate.getFullYear()}/m${
                         reminderDate.getMonth() + 1
                     }/d${reminderDate.getDate()}[${cronReminderIdx}]`
@@ -361,31 +422,31 @@ function deleteReminder(reminderId) {
 
             if (reminder.guildId !== null) {
                 // Delete from guild
-                const gReminders = reminders.getData(
+                const gReminders = REMINDERS.getData(
                     `/guilds/${reminder.guildId}/${reminder.userId}/reminders`
                 );
                 const gReminderIdx = gReminders.findIndex(
                     (x) => x === reminderId
                 );
                 if (gReminderIdx > -1)
-                    reminders.delete(
+                    REMINDERS.delete(
                         `/guilds/${reminder.guildId}/${reminder.userId}/reminders[${gReminderIdx}]`
                     );
             } else {
                 // Delete from user
-                const uReminders = reminders.getData(
+                const uReminders = REMINDERS.getData(
                     `/users/${reminder.userId}/reminders`
                 );
                 const uReminderIdx = uReminders.findIndex(
                     (x) => x === reminderId
                 );
                 if (uReminderIdx > -1)
-                    reminders.delete(
+                    REMINDERS.delete(
                         `/users/${reminder.userId}/reminders[${uReminderIdx}]`
                     );
             }
             // Delete from reminders
-            reminders.delete(`/reminders/${reminderId}`);
+            REMINDERS.delete(`/reminders/${reminderId}`);
         }
     } catch (err) {
         console.error(err);
@@ -422,18 +483,21 @@ async function queueDeleteMessage(message) {
 
 function sendReminderToChannel(rid, r) {
     const message = `Hey <@${r.userId}>, here's your reminder:\n${r.message}`;
-    client.channels
-        .get(r.channelId)
-        .send(message)
-        .then((msg) => {
-            deleteReminder(rid);
-        });
+    if (client.status === 0) {
+        // Make sure bot is ready and connected
+        client.channels
+            .get(r.channelId)
+            .send(message)
+            .then((msg) => {
+                deleteReminder(rid);
+            });
+    }
 }
 
 function SEND_REMINDERS() {
     try {
         const today = new Date();
-        const remindersForToday = reminders.getData(
+        const remindersForToday = REMINDERS.getData(
             `/cron/y${today.getFullYear()}/m${
                 today.getMonth() + 1
             }/d${today.getDate()}`
@@ -443,7 +507,7 @@ function SEND_REMINDERS() {
                 const rem = getReminderById(rid);
                 if (rem) {
                     const now = new Date();
-                    if (rem.time <= now) {
+                    if (new Date(rem.time) <= now) {
                         sendReminderToChannel(rid, rem);
                     }
                 }

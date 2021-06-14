@@ -237,10 +237,9 @@ const REMINDER_COMMANDS = {
                 if (newReminder !== false) {
                     received.channel
                         .send(
-                            `Ok, I'll remind you on **${jsDate.toLocaleDateString()} at ${jsDate.toLocaleTimeString()}** about *${REMINDER_MESSAGE}*`
+                            `Ok <@${userId}>, I'll remind you on **${jsDate.toLocaleDateString()} at ${jsDate.toLocaleTimeString()}** about *${REMINDER_MESSAGE}*`
                         )
                         .then((msg) => {
-                            queueDeleteMessage(msg);
                             queueDeleteMessage(received);
                         });
                 } else {

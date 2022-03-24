@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "chrono-node": "^2.2.7",
-    "minimist": ">=1.2.2",
+    "minimist": ">=1.2.6",
     "moment-timezone": "^0.5.28",
     "uuid": "^8.3.2"
   }
